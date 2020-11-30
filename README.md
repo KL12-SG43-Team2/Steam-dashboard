@@ -12,6 +12,7 @@ De Steam Dashboard is bedoeld om een inzicht te krijgen in het game gedrag van U
 
 # Medewerkers
 Aan dit dashboard hebben de volgende mensen meegewerkt:
+
 Eva Olthof
 1782640
 EvaOlthofHU
