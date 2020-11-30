@@ -4,19 +4,11 @@ from PIL import ImageTk,Image  #pip install pillow
 import urllib.parse #pip install urllib
 import io
 
-# key = "7139EBA744B55B104024D221C07EFB38"
-# url = f"http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={key}&steamids={evaID}"
-
 Luka = '76561198174496762'
 Robin = '76561197960434622'
 Joel = '76561198152182165'
 Eva = '76561198803753153'
 Henry = '76561198074124658'
-
-steamid = Henry
-steamkey = '7139EBA744B55B104024D221C07EFB38'
-spelid = '20'
-
 
 def steamgameslibrary():
     url = "https://raw.githubusercontent.com/tijmenjoppe/AnalyticalSkills-student/master/project/data/steam.json"
