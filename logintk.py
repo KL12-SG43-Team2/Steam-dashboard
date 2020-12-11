@@ -7,7 +7,7 @@ from steam.enums import EResult
 client = SteamClient()
 logging.basicConfig(format="%(asctime)s | %(message)s", level=logging.INFO)
 LOG = logging.getLogger()
-user = sw.WebAuth('username')
+# user = sw.WebAuth('username')
 background = '#1b2838'
 txt = 'white'
 wrong = 'red'
@@ -94,28 +94,41 @@ class login():
                                 text='Enter 2FA code:',
                                 bg=background,
                                 fg=txt)
-                authtxt.place(relx=0.34, rely=0.3)
+                authtxt.place(relx=0.34, rely=0.25)
                 self.authcode = Entry(self.frame,
                                       font=('Helvetica', 20, 'bold'),
                                       justify='center',
                                       textvariable=self.var,
                                       width=10)
-                self.authcode.place(relx=0.5, rely=0.4, anchor=CENTER)
+                self.authcode.place(relx=0.5, rely=0.35, anchor=CENTER)
                 self.var.trace('w', self.autocap)
+                self.authwrong = Label(self.frame,
+                                       bg=background,
+                                       fg=wrong)
+                self.authwrong.place(relx=0.34, rely=0.4)
                 authback = Button(self.frame,
                                   text='Terug',
                                   width=6,
                                   height=2,
                                   command=self.authgoback)
-                authback.place(relx=0.45, rely=0.6, anchor=E)
+                authback.place(relx=0.4, rely=0.65, anchor=E)
+                authresend = Button(self.frame,
+                                    text='Resend',
+                                    width=6,
+                                    height=2,
+                                    command=self.authres)
+                authresend.place(relx=0.5, rely=0.65, anchor=CENTER)
                 authsubmit = Button(self.frame,
                                     text='Login',
                                     width=6,
                                     height=2,
                                     command=self.authsubmit)
-                authsubmit.place(relx=0.55, rely=0.6, anchor=W)
-            else:
+                authsubmit.place(relx=0.6, rely=0.65, anchor=W)
+            elif result == EResult.OK:
                 pass #vanaf hier doorgaan naar het normale programma
+            else:
+                print(result)
+                self.passwrong['text'] = result
 
 
     def autocap(self, *arg):
@@ -130,12 +143,26 @@ class login():
 
 
     def authsubmit(self):
+        self.authwrong['text'] = ''
         twoFAcode = self.authcode.get()
-        client.login(username=self.usernameinp, password=self.passwordinp, two_factor_code=twoFAcode)
-        print(client.user.name)
-        print(client.steam_id.as_64)
-        # vanaf hier doorgaan naar het normale programma
-        client.logout()
+        result = client.login(username=self.usernameinp, password=self.passwordinp, two_factor_code=twoFAcode)
+        print(result)
+        if result == EResult.TwoFactorCodeMismatch:
+            self.authwrong['text'] = '2FA code is verkeerd'
+        elif result == EResult.RateLimitExceeded:
+            self.authwrong['text'] = 'Te vaak geprobeerd, probeer later opnieuw'
+        elif result == EResult.OK:
+            print(client.user.name)
+            print(client.steam_id.as_64)
+            # vanaf hier doorgaan naar het normale programma
+            client.logout()
+        else:
+            print(result)
+            self.passwrong['text'] = result
+
+
+    def authres(self):
+        client.login(username=self.usernameinp, password=self.passwordinp)
 
 
 
