@@ -35,6 +35,7 @@ sidewidth = 240
 gamebreedte = 280
 iconbreedte = 30
 gamenamelength = 20
+namelength = gamenamelength
 
 
 class login():
@@ -195,10 +196,10 @@ class login():
 class mainscreen():
     def gamesget(self):
         res = requests.get(steamjson)
-        games = res.json()
+        self.games = res.json()
         self.gamephoto = []
         for i in range(9):
-            game = str(games[i]['appid'])
+            game = str(self.games[i]['appid'])
             gameurl = 'https://store.steampowered.com/api/appdetails?appids={}'.format(game)
             resgame = requests.get(gameurl)
             gamejson = resgame.json()
@@ -231,6 +232,7 @@ class mainscreen():
         self.framec.pack()
         self.gameshow()
         self.getownedgames(steamid)
+        self.getfriends(steamid)
         self.root.mainloop()
 
 
@@ -270,7 +272,7 @@ class mainscreen():
             self.gameshift(k, 0)
 
 
-    def gameklik(self, gameid):
+    def gameclick(self, gameid):
         print(gameid)
 
 
@@ -289,7 +291,7 @@ class mainscreen():
 
 
     def gameshift(self, object, numb):
-        self.gamepageshow = lambda x: (lambda y: self.gameklik(x))
+        self.gamepageshow = lambda x: (lambda y: self.gameclick(x))
         gamegoleft = lambda x: (lambda y: self.gameleft(x, numb))
         gamegoright = lambda x: (lambda y: self.gameright(x, numb))
         for j in range(3):
@@ -320,20 +322,32 @@ class mainscreen():
     def getownedgames(self, steamid):
         gamelib = 'http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={}&steamid={}&format=json&include_appinfo=true'.format(steamkey, steamid)
         res = requests.get(gamelib)
-        gamesjson = res.json()
+        self.gamesjson = res.json()
         # print(gamesjson)
-        games = gamesjson['response']['games']
+        games = self.gamesjson['response']['games']
         gametitle = Label(self.framel,
                           text='Owned Games:',
                           font=sidefont,
                           fg=maintxt,
                           bg=backgroundside)
         gametitle.place(relx=0.1, rely=0.5, anchor='w')
-        ind = 0
-        for game in games[:8]:
+        if self.gamesjson['response']['game_count'] > 8:
+            gameplus = Label(self.framel,
+                             text='+{} more'.format(self.gamesjson['response']['game_count']-8),
+                             font=sidefont,
+                             fg=maintxt,
+                             bg=backgroundside)
+            gameplus.place(relx=0.1, rely=0.95, anchor='w')
+        self.gamesideshow(games[:8], 0.53)
+        self.gamefavorites()
+
+
+    def gamesideshow(self, games, y):
+        ind=0
+        for game in games:
             gameicurl = 'http://media.steampowered.com/steamcommunity/public/images/apps/{}/{}.jpg'.format(game['appid'], game['img_icon_url'])
-            raw_data1 = urllib.request.urlopen(gameicurl).read()
-            image = Image.open(io.BytesIO(raw_data1))
+            raw_data = urllib.request.urlopen(gameicurl).read()
+            image = Image.open(io.BytesIO(raw_data))
             image = image.resize((iconbreedte, iconbreedte), Image.ANTIALIAS)
             imagevol = ImageTk.PhotoImage(image)
             gamenamevar = game['name']
@@ -344,20 +358,84 @@ class mainscreen():
             gamepic.image = imagevol
             gamepic.configure(image=imagevol)
             gamepic.bind('<1>', self.gamepageshow(game['appid']))
-            gamepic.place(relx=0.1, rely=0.53+ind*0.05)
+            gamepic.place(relx=0.1, rely=y+ind*0.05)
             gamename = Label(self.framel,
                              text=gamenamevar,
                              fg=maintxt,
                              bg=backgroundside)
             gamename.bind('<1>', self.gamepageshow(game['appid']))
-            gamename.place(relx=0.25, rely=0.55+ind*0.05, anchor='w')
+            gamename.place(relx=0.25, rely=y+0.02+ind*0.05, anchor='w')
             ind += 1
-        gameplus = Label(self.framel,
-                         text='+{} more'.format(gamesjson['response']['game_count']-8),
-                         font=sidefont,
-                         fg=maintxt,
-                         bg=backgroundside)
-        gameplus.place(relx=0.1, rely=0.95, anchor='w')
+
+
+    def gamefavorites(self):
+        games = self.gamesjson['response']['games']
+        favorgames = games[:3]
+        favortitle = Label(self.framel,
+                           text='Favorite games:',
+                           font=sidefont,
+                           bg=backgroundside,
+                           fg=maintxt)
+        favortitle.place(relx=0.1, rely=0.2, anchor='w')
+        self.gamesideshow(favorgames, 0.23)
+
+
+    def getfriends(self, steamid):
+        friendurl = 'http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key={}&steamid={}&relationship=friend'.format(steamkey, steamid)
+        res = requests.get(friendurl)
+        self.friendjson = res.json()
+        friends = self.friendjson['friendslist']['friends']
+        friendtitle = Label(self.framer,
+                          text='Friends:',
+                          font=sidefont,
+                          fg=maintxt,
+                          bg=backgroundside)
+        friendtitle.place(relx=0.1, rely=0.1, anchor='w')
+        if len(friends) > 5:
+            friendplus = Label(self.framer,
+                             text='+{} more'.format(len(friends)-5),
+                             font=sidefont,
+                             fg=maintxt,
+                             bg=backgroundside)
+            friendplus.place(relx=0.1, rely=0.55, anchor='w')
+        self.showfriends(friends[:8], 0.13)
+
+
+    def showfriends(self, friends, y):
+        self.friendpageshow = lambda x: (lambda y: self.friendclick(x))
+        personpagesurl = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={}&steamids='.format(steamkey)
+        ind = 0
+        for friend in friends:
+            personpagesurl += '{},'.format(friend['steamid'])
+        res = requests.get(personpagesurl)
+        self.personsjson = res.json()
+        persons = self.personsjson['response']['players']
+        for person in persons:
+            profilepicurl = person['avatar']
+            raw_data = urllib.request.urlopen(profilepicurl).read()
+            image = Image.open(io.BytesIO(raw_data))
+            image = image.resize((iconbreedte, iconbreedte), Image.ANTIALIAS)
+            imagevol = ImageTk.PhotoImage(image)
+            profilename = person['personaname']
+            if len(profilename) > namelength:
+                profilename = '{}...'.format(profilename[:namelength-3])
+            friendpic = Label(self.framer,
+                            bg=backgroundside)
+            friendpic.image = imagevol
+            friendpic.configure(image=imagevol)
+            friendpic.bind('<1>', self.friendpageshow(person['steamid']))
+            friendpic.place(relx=0.1, rely=y + ind * 0.05)
+            gamename = Label(self.framer,
+                             text=profilename,
+                             fg=maintxt,
+                             bg=backgroundside)
+            gamename.bind('<1>', self.friendpageshow(person['steamid']))
+            gamename.place(relx=0.25, rely=y + 0.02 + ind * 0.05, anchor='w')
+            ind += 1
+
+
+    def friendclick(self, steamid):
+        print(steamid)
 
 
 
