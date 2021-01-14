@@ -1,7 +1,8 @@
 from tkinter import *
+from tkinter import ttk
 from steam.client import SteamClient #pip install steam
 #pip install google-cloud
-# pip install google-cloud-
+#pip install google-cloud-
 #pip install steam[client]
 from steam.enums import EResult
 import requests #pip install requests
@@ -10,6 +11,11 @@ import urllib.parse #pip install urllib
 import io
 import atexit
 from bs4 import BeautifulSoup #pip install lxml
+import random
+import math
+from datetime import datetime
+import matplotlib.pyplot as plt #pip install matplotlib
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 Luka = '76561198174496762'
 Luka2 = '76561198371592493'
@@ -22,8 +28,6 @@ steamkey = '783790D02B11E668DE41726C35D66B15'
 steamjson = 'https://raw.githubusercontent.com/tijmenjoppe/AnalyticalSkills-student/master/project/data/steam.json'
 client = SteamClient()
 language = 'en'
-# user = sw.WebAuth('username')
-# ac = AnyCache()
 #textkleuren
 txt = 'white'
 wrong = 'red'
@@ -38,11 +42,14 @@ gamepagefont = ('',16)
 discountfont = ('',12,'overstrike')
 discountpercentfont = ('',30,'bold')
 fulldescriptionfont = ('',12)
+searchgamefont = ('',13,'bold')
+tagfont = ('',10,'bold')
 #achtergrondkleuren
 backgroundlogin = '#1b2838'
 backgroundmain = backgroundlogin
 backgroundtest = 'white'
 backgroundside = '#101822'
+backgroundsearchgame = '#2c3e52'
 #afmetingen
 sidewidth = 240
 gamebreedte = 260
@@ -74,20 +81,41 @@ class general():
         return ImageTk.PhotoImage(image)
 
 
-    def QuickSort(self, lst, key, ascending=True):
+    def QuickSort(self, lst, key, ascending=True, disregardtype=False):
         if not lst:
             return []
         else:
             pivot = (len(lst) // 2)
             pivot_value = lst[pivot]
-            lesser = self.QuickSort(self, [l for i, l in enumerate(lst)
-                                           if l[key] < pivot_value[key] and i != pivot], key)
-            greater = self.QuickSort(self, [l for l in lst if l[key] > pivot_value[key]], key)
-            equal = [l for l in lst if l[key] == pivot_value[key]]
+            if type(pivot_value[key]) is str and disregardtype is False:
+                lesser = self.QuickSort(self, [l for i, l in enumerate(lst)
+                                               if l[key].lower() < pivot_value[key].lower() and i != pivot], key.lower())
+                greater = self.QuickSort(self, [l for l in lst if l[key].lower() > pivot_value[key].lower()], key.lower())
+                equal = [l for l in lst if l[key].lower() == pivot_value[key].lower()]
+            else:
+                lesser = self.QuickSort(self, [l for i, l in enumerate(lst)
+                                               if l[key] < pivot_value[key] and i != pivot], key)
+                greater = self.QuickSort(self, [l for l in lst if l[key] > pivot_value[key]], key)
+                equal = [l for l in lst if l[key] == pivot_value[key]]
             newlst = lesser + equal + greater
             if not ascending:
                 newlst.reverse()
             return newlst
+
+
+    def binarysearch(self, lst, key, target):
+        new_lst = lst.copy()
+        aver = int((len(lst) - 1) / 2)
+        if new_lst != []:
+            if target == new_lst[aver][key]:
+                return new_lst[aver]
+            elif aver >= len(lst) - 1:
+                return False
+            elif target > new_lst[aver][key]:
+                return self.binarysearch(self, new_lst[aver + 1:], key, target)
+            else:
+                return self.binarysearch(self, new_lst[:aver], key, target)
+        return False
 
 
 class login():
@@ -285,6 +313,7 @@ class login():
 class mainscreen():
     gamesjson = {}
     arrowpicture = 'https://www.eaolthof.nl/wp-content/uploads/2021/01/pijl.jpg'
+    gamelist = []
     def gamesget(self):
         games = general.getjson(general, steamjson)
         mainscreen.gamesjson = games
@@ -299,12 +328,11 @@ class mainscreen():
             gamephoto.append({'image':imagevolgame, 'appid':game})
         popsort = general.QuickSort(general, games, 'positive_ratings', ascending=False)
         games = self.gamesjson['response']['games']
-        gamelist = []
         popgamesnotinlib = []
         for game in games:
-            gamelist.append(game['appid'])
+            mainscreen.gamelist.append(game['appid'])
         for game in popsort:
-            if game['appid'] not in gamelist:
+            if game['appid'] not in mainscreen.gamelist:
                 gameurl = 'https://store.steampowered.com/api/appdetails?appids={}&language={}'.format(game['appid'],
                                                                                                        language)
                 gamejson = general.getjson(general, gameurl)
@@ -381,9 +409,11 @@ class mainscreen():
                           font=searchbarfont,
                           width=19,
                           borderwidth=0,
+                          insertbackground=maintxt,
                           fg=maintxt,
                           bg=backgroundside)
         searchbar.grid(row=0, column=1, padx=(380,0), pady=(150,10), sticky='e')
+        searchbar.bind('<Return>', lambda x: searchscreen(self.framec, self.framecunder, searchbar.get()))
         searchicon = 'https://www.eaolthof.nl/wp-content/uploads/2021/01/search.jpg'
         searchimage = general.getimage(general, searchicon, 35, 35, 0)
         searchic = Label(self.framesearch,
@@ -391,6 +421,7 @@ class mainscreen():
         searchic.image = searchimage
         searchic.configure(image=searchimage)
         searchic.grid(row=0, column=2, pady=(140,0), sticky='w')
+        searchic.bind('<1>', lambda x:searchscreen(self.framec, self.framecunder, searchbar.get()))
         self.framec1 = Frame(self.framec,
                              bg=backgroundmain)
         self.framec1.pack()
@@ -472,7 +503,9 @@ class mainscreen():
 
     def gamesidetitleshow(self, steamid):
         self.gamepageshow = lambda x: (lambda y: self.gameclick(x))
+        self.ownedgamepage = lambda x: (lambda y: self.ownedgameclick(x))
         self.gamesjson = self.getownedgames(steamid)
+        self.sortedgames = general.QuickSort(general, self.gamesjson['response']['games'], 'appid')
         games = self.gamesjson['response']['games']
         gametitle = Label(self.framel,
                           text='Owned Games:',
@@ -504,13 +537,13 @@ class mainscreen():
                             bg=backgroundside)
             gamepic.image = imagevol
             gamepic.configure(image=imagevol)
-            gamepic.bind('<1>', self.gamepageshow(game['appid']))
+            gamepic.bind('<1>', self.ownedgamepage(game['appid']))
             gamepic.place(relx=0.1, rely=y+ind*0.05)
             gamename = Label(self.framel,
                              text=gamenamevar,
                              fg=maintxt,
                              bg=backgroundside)
-            gamename.bind('<1>', self.gamepageshow(game['appid']))
+            gamename.bind('<1>', self.ownedgamepage(game['appid']))
             gamename.place(relx=0.25, rely=y+0.02+ind*0.05, anchor='w')
             ind += 1
 
@@ -554,18 +587,20 @@ class mainscreen():
             if 'gameextrainfo' in person.keys():
                 gameplaying = person['gameextrainfo']
                 self.new_personlst.insert(0, {'id':person['steamid'],
-                                         'name':person['personaname'],
-                                         'picture':person['avatar'],
-                                         'personastate':person['personastate'],
-                                         'gameplaying':gameplaying,
-                                         'gameplayingid':person['gameid']})
+                                              'name':person['personaname'],
+                                              'picture':person['avatar'],
+                                              'dict':person,
+                                              'personastate':person['personastate'],
+                                              'gameplaying':gameplaying,
+                                              'gameplayingid':person['gameid']})
             else:
                 gameplaying = ''
                 self.new_personlst.append({'id':person['steamid'],
-                                      'name':person['personaname'],
-                                      'picture':person['avatar'],
-                                      'personastate':person['personastate'],
-                                      'gameplaying':gameplaying})
+                                           'name':person['personaname'],
+                                           'picture':person['avatar'],
+                                           'dict': person,
+                                           'personastate':person['personastate'],
+                                           'gameplaying':gameplaying})
         friendtitle = Label(self.framer,
                           text='Friends:',
                           font=sidefont,
@@ -599,6 +634,13 @@ class mainscreen():
                            bg=backgroundside)
         userlogout.place(relx=0.575, rely=0.95, anchor='e')
         userlogout.bind('<1>', lambda x:self.logout())
+        userquit = Label(self.framer,
+                           text='Quit',
+                           font=logoutfont,
+                           fg='gray',
+                           bg=backgroundside)
+        userquit.place(relx=0.3, rely=0.95, anchor='e')
+        userquit.bind('<1>', lambda x:self.root.destroy())
         image = general.getimage(general, userinfo['avatar'], profilepicbreedte, profilepicbreedte, 0)
         userpicture = Label(self.framer,
                             bg=backgroundmain)
@@ -622,6 +664,16 @@ class mainscreen():
                     bordercolor = '#57cbde'
                 else:
                     bordercolor = '#a3cf06'
+                    game = person['gameplaying']
+                    if len(game) > 20:
+                        game = '{}...'.format(game[:17])
+                    playinggame = Label(self.framer,
+                                        text=game,
+                                        font=('',7),
+                                        fg=bordercolor,
+                                        bg=backgroundside)
+                    playinggame.place(relx=0.25, rely=y+0.0275+ind*0.05)
+                    playinggame.bind('<1>', self.gamepageshow(person['gameplayingid']))
                 friendborder = Label(self.framer,
                                      font=('',20),
                                      bg=bordercolor,
@@ -654,6 +706,11 @@ class mainscreen():
         print(steamid)
 
 
+    def ownedgameclick(self, gameid):
+        self.cleanscreen()
+        librarygame(self.framec, self.framecunder, general.binarysearch(general, self.sortedgames, 'appid', gameid))
+
+
     def logout(self):
         client.logout()
         self.root.destroy()
@@ -675,6 +732,7 @@ class showfulllist():
 
     def showgames(self, dict, title):
         gamelist = dict['response']['games']
+        self.clickaction = lambda x: (lambda y: librarygame(self.framec, self.root, x))
         self.gamepictures = []
         for game in gamelist:
             gameicurl = 'http://media.steampowered.com/steamcommunity/public/images/apps/{}/{}.jpg'.format(
@@ -682,12 +740,14 @@ class showfulllist():
             imagevol = general.getimage(general, gameicurl, iconbreedtemore, iconbreedtemore, 0)
             self.gamepictures.append({'id':str(game['appid']),
                                       'name':game['name'],
-                                      'picture':imagevol})
+                                      'picture':imagevol,
+                                      'dict':game})
         self.startindex = 0
         self.displayinfo(self.gamepictures, self.startindex, title)
 
 
     def showfriends(self, dict, title):
+        self.clickaction = lambda x: (lambda y: mainscreen.friendclick(mainscreen, x))
         for friend in dict:
             profilepicurl = friend['picture']
             imagevol = general.getimage(general, profilepicurl, iconbreedtemore, iconbreedtemore, 0)
@@ -730,17 +790,28 @@ class showfulllist():
                                              width=2,
                                              height=1)
                         friendborder.place(relx=0.047+y*0.32, rely=0.2475+x*0.12)
+                        game = dict[index]['gameplaying']
+                        if len(game) > 20:
+                            game = '{}...'.format(game[:17])
+                        playinggame = Label(self.framec,
+                                            text=game,
+                                            font=('',11),
+                                            fg=bordercolor,
+                                            bg=backgroundmain)
+                        playinggame.place(relx=0.11+y*0.32, rely=0.295+x*0.12)
                 gameicon = Label(self.framec,
                                  bg=backgroundmain)
                 gameicon.image = image
                 gameicon.configure(image=image)
                 gameicon.place(relx=0.05+y*0.32, rely=0.25+x*0.12)
+                gameicon.bind('<1>', self.clickaction(dict[index]['dict']))
                 gamenamedisplay = Label(self.framec,
                                         text=gamename,
                                         font=gamepagefont,
                                         fg=bordercolor,
                                         bg=backgroundmain)
                 gamenamedisplay.place(relx=0.11+y*0.32, rely=0.265+x*0.12)
+                gamenamedisplay.bind('<1>', self.clickaction(dict[index]['dict']))
         if dict[:index+1] != dict[startindex:index+1]:
             arrowup = True
         if arrowup:
@@ -806,6 +877,7 @@ class gamescreen():
 
     def displaygameinfo(self, appid):
         self.gameinfo = self.getgameinfo(appid)
+        steamjson = general.binarysearch(general, mainscreen.gamesjson, 'appid', int(appid))
         gamedesc = BeautifulSoup(self.gameinfo[str(appid)]['data']['detailed_description'].replace('\t', ''), 'html.parser')
         gamepic = self.gameinfo[str(appid)]['data']['header_image']
         self.gamedes = gamedesc.get_text('\n')
@@ -822,6 +894,15 @@ class gamescreen():
                          fg=maintxt,
                          bg=backgroundmain)
         gamename.place(relx=0.05, rely=0.38)
+        if steamjson != False:
+            release = Label(self.framec,
+                              text='Release date: {}'.format(steamjson['release_date']),
+                              font=gamepagefont,
+                              fg=maintxt,
+                              bg=backgroundmain)
+            release.place(relx=0.85, rely=0.2, anchor='e')
+        else:
+            release = 0
         gamedescription = Label(self.framec,
                                 text=self.gamedes,
                                 font=gamepagefont,
@@ -913,6 +994,7 @@ class gamescreen():
                             wraplength=900,
                             font=fulldescriptionfont,
                             justify=LEFT,
+                            height=36,
                             anchor=NW,
                             fg=maintxt,
                             bg=backgroundmain)
@@ -929,6 +1011,458 @@ class gamescreen():
         self.framec.pack(fill=BOTH, expand=1)
 
 
+class librarygame():
+    def __init__(self, frame, root, json):
+        frame.destroy()
+        self.root = root
+        try:
+            self.framec.destroy()
+        except:
+            pass
+        self.framec = Frame(self.root,
+                            bg=backgroundmain)
+        self.framec.pack(fill=BOTH, expand=1)
+        self.displaygameinfo(json)
+
+
+    def displaygameinfo(self, json):
+        gotogeneralpage =  lambda x: (lambda y: gamescreen(self.framec, self.root, x))
+        generalgameinfo = gamescreen.getgameinfo(gamescreen, json['appid'])
+        imagevol = general.getimage(general, generalgameinfo[str(json['appid'])]['data']['header_image'], gamepagebreedte, int(gamepagebreedte * gameratio), 0)
+        steamjson = general.binarysearch(general, mainscreen.gamesjson, 'appid', json['appid'])
+        searchtag = random.choice(steamjson['steamspy_tags'].split(';'))
+        popsort = general.QuickSort(general, mainscreen.gamesjson, 'positive_ratings', ascending=False)
+        suggames = []
+        for game in popsort:
+            if searchtag in game['steamspy_tags']:
+                if game['appid'] not in mainscreen.gamelist:
+                    suggames.append(game)
+            if len(suggames) >= 3:
+                break
+        gamepicture = Label(self.framec,
+                          bg=backgroundmain)
+        gamepicture.image = imagevol
+        gamepicture.configure(image=imagevol)
+        gamepicture.place(relx=0.05, rely=0.15)
+        gamename = Label(self.framec,
+                         text=generalgameinfo[str(json['appid'])]['data']['name'],
+                         font=gamepagetitlefont,
+                         justify=LEFT,
+                         fg=maintxt,
+                         bg=backgroundmain)
+        gamename.place(relx=0.05, rely=0.38)
+        gotogeneral = Label(self.framec,
+                          text='Go to general page',
+                          font=gamepagefont,
+                          fg='gray',
+                          bg=backgroundmain)
+        gotogeneral.place(relx=0.85, rely=0.28, anchor='e')
+        gotogeneral.bind('<1>', gotogeneralpage(json['appid']))
+        playtime = 0
+        if 'playtime_2weeks' in json.keys():
+            playtime = round(json['playtime_2weeks']/60, 1)
+        playtimerecent = Label(self.framec,
+                          text='Your playtime the last two weeks: {} hours'.format(playtime),
+                          font=gamepagefont,
+                          fg=maintxt,
+                          bg=backgroundmain)
+        playtimerecent.place(relx=0.05, rely=0.5)
+        playtimeall = Label(self.framec,
+                               text='Your total playtime: {} hours'.format(round(json['playtime_forever']/60, 1)),
+                               font=gamepagefont,
+                               fg=maintxt,
+                               bg=backgroundmain)
+        playtimeall.place(relx=0.05, rely=0.55)
+        suggestedtxt = Label(self.framec,
+                            text='Other {} games like this'.format(searchtag.lower()),
+                            font=gamepagefont,
+                            fg=maintxt,
+                            bg=backgroundmain)
+        suggestedtxt.place(relx=0.05, rely=0.68)
+        ind = 0
+        for suggame in suggames:
+            sugjson = gamescreen.getgameinfo(gamescreen, suggame['appid'])
+            sugimage = general.getimage(general, sugjson[str(suggame['appid'])]['data']['header_image'], gamebreedte, int(gamebreedte*gameratio), 0)
+            sugg = Label(self.framec,
+                         bg=backgroundmain)
+            sugg.image = sugimage
+            sugg.configure(image=sugimage)
+            sugg.place(relx=0.2+0.3*ind, rely=0.8, anchor='center')
+            sugg.bind('<1>', gotogeneralpage(suggame['appid']))
+            ind += 1
+
+
+class searchscreen():
+    def __init__(self, frame, root, searchterm):
+        frame.destroy()
+        self.root = root
+        try:
+            self.framec.destroy()
+        except:
+            pass
+        self.framec = Frame(self.root,
+                            bg=backgroundmain)
+        self.framec.pack(fill=BOTH, expand=1)
+        self.showsearchscreen(searchterm)
+
+
+    def getsearchresults(self, searchterm):
+        newlst = []
+        for game in mainscreen.gamesjson:
+            if searchterm.lower() in game['name'].lower():
+                newlst.append(game)
+        return newlst
+
+
+    def getpossibletags(self, json):
+        taglst = []
+        for game in json:
+            tags = game['steamspy_tags'].split(';')
+            for tag in tags:
+                if {'tag':tag} not in taglst:
+                    taglst.append({'tag':tag})
+        return general.QuickSort(general, taglst, 'tag')
+
+
+    def showsearchscreen(self, searchterm):
+        self.arrowup = general.getimage(general, mainscreen.arrowpicture, 50, 50, 90)
+        self.arrowdown = general.getimage(general, mainscreen.arrowpicture, 50, 50, 270)
+        searchbar = Entry(self.framec,
+                          font=searchbarfont,
+                          width=19,
+                          borderwidth=0,
+                          insertbackground=maintxt,
+                          fg=maintxt,
+                          bg=backgroundside)
+        searchbar.place(relx=0.05, rely=0.1)
+        searchbar.bind('<Return>', lambda x: searchscreen(self.framec, self.root, searchbar.get()))
+        searchbar.insert(0, searchterm)
+        searchicon = 'https://www.eaolthof.nl/wp-content/uploads/2021/01/search.jpg'
+        searchimage = general.getimage(general, searchicon, 35, 35, 0)
+        searchic = Label(self.framec,
+                         bg=backgroundmain)
+        searchic.image = searchimage
+        searchic.configure(image=searchimage)
+        searchic.place(relx=0.27, rely=0.0925)
+        searchic.bind('<1>', lambda x:searchscreen(self.framec, self.root, searchbar.get()))
+        searchtitle = Label(self.framec,
+                            text='Search results for \'{}\''.format(searchterm),
+                            font=gamepagetitlefont,
+                            fg=maintxt,
+                            bg=backgroundmain)
+        searchtitle.place(relx=0.05, rely=0.14)
+        self.searchresults = self.getsearchresults(searchterm)
+        if len(self.searchresults) == 0:
+            noresults = Label(self.framec,
+                              text='No results',
+                              font=('', 40, 'bold'),
+                              fg='gray',
+                              bg=backgroundmain)
+            noresults.place(relx=0.5, rely=0.4, anchor='center')
+        else:
+            try:
+                combostyle = ttk.Style()
+                combostyle.theme_create('combostyle', parent='alt',
+                                        settings={'TCombobox':
+                                                      {'configure':
+                                                           {'selectbackground': '#2c3e52',
+                                                            'fieldbackground': '#2c3e52',
+                                                            'background': '#1b2838',
+                                                            'foreground': 'white',
+                                                            }}})
+                combostyle.theme_use('combostyle')
+            except:
+                pass
+            self.sortterms = {'Name': 'name', 'Release date': 'release_date', 'Positive ratings': 'positive_ratings',
+                              'Negative ratings': 'negative_ratings', 'Ratings ratio':'ratio',
+                              'Price': 'price'}
+            self.sortorders = {'Ascending': True, 'Descending': False}
+            self.taglst = []
+            self.track = StringVar()
+            self.getterm = StringVar()
+            self.sortorder = StringVar()
+            self.tagchange = lambda x: (lambda y: self.deletetag(x))
+            self.tagframe = Frame(self.framec,
+                             bg=backgroundmain,
+                             width=200)
+            self.tagframe.place(relx=0.75, rely=0.4, anchor='nw')
+            tagtitle = Label(self.framec,
+                             text='Filter tags',
+                             font=gamepagefont,
+                             fg=maintxt,
+                             bg=backgroundmain)
+            tagtitle.place(relx=0.75, rely=0.315)
+            searchtitle = Label(self.framec,
+                                text='Sort by',
+                                font=gamepagefont,
+                                fg=maintxt,
+                                bg=backgroundmain)
+            searchtitle.place(relx=0.75, rely=0.615)
+            taglstdict = self.getpossibletags(self.searchresults)
+            taglst = []
+            for tag in taglstdict:
+                taglst.append(tag['tag'])
+            self.tagdropdown = ttk.Combobox(self.framec,
+                                            state='readonly',
+                                            values=taglst,
+                                            textvariable=self.track,
+                                            font=gamepagefont,
+                                            width=15)
+            self.tagdropdown.place(relx=0.75, rely=0.35)
+            self.tagdropdown.bind("<<ComboboxSelected>>", self.changetag)
+            self.searchdropdown = ttk.Combobox(self.framec,
+                                               state='readonly',
+                                               values=list(self.sortterms.keys()),
+                                               textvariable=self.getterm,
+                                               font=gamepagefont,
+                                               width=15)
+            self.searchdropdown.place(relx=0.75, rely=0.65)
+            self.searchorder = ttk.Combobox(self.framec,
+                                               state='readonly',
+                                               values=list(self.sortorders.keys()),
+                                               textvariable=self.sortorder,
+                                               font=gamepagefont,
+                                               width=15)
+            self.searchorder.current(0)
+            self.searchorder.place(relx=0.75, rely=0.7)
+            confirm = Label(self.framec,
+                            text='Commit changes',
+                            font=searchgamefont,
+                            width=19,
+                            height=2,
+                            fg=maintxt,
+                            bg=backgroundsearchgame)
+            confirm.place(relx=0.75, rely=0.8)
+            confirm.bind('<1>', lambda x:self.usesearchterms())
+            self.postedtaglst = []
+            self.errormsg = False
+            self.usesearchterms()
+
+
+    def changetag(self, event):
+        tag = self.track.get()
+        if tag not in self.taglst:
+            if len(self.taglst) >= 5:
+                if not self.errormsg:
+                    error = Label(self.tagframe,
+                                  text='The limit is 5 tags',
+                                  justify=LEFT,
+                                  font=tagfont,
+                                  fg=wrong,
+                                  bg=backgroundmain)
+                    error.pack(pady=2, anchor='w')
+                    self.errormsg = True
+            else:
+                self.taglst.append(tag)
+                self.addtag()
+
+
+    def addtag(self):
+        for tag in self.taglst:
+            if tag not in self.postedtaglst:
+                self.postedtaglst.append(tag)
+                newtag = Label(self.tagframe,
+                               text=tag,
+                               justify=LEFT,
+                               font=tagfont,
+                               fg=maintxt,
+                               bg=backgroundside)
+                newtag.pack(pady=2, anchor='w')
+                newtag.bind('<1>', self.tagchange(tag))
+
+
+    def deletetag(self, tag):
+        self.tagframe.destroy()
+        self.tagframe = Frame(self.framec,
+                              bg=backgroundmain,
+                              width=200)
+        self.tagframe.place(relx=0.75, rely=0.4, anchor='nw')
+        for lsttag in self.postedtaglst:
+            if lsttag != tag:
+                newtag = Label(self.tagframe,
+                               text=lsttag,
+                               font=tagfont,
+                               fg=maintxt,
+                               bg=backgroundside)
+                newtag.pack(pady=2, anchor='w')
+                newtag.bind('<1>', self.tagchange(lsttag))
+        self.postedtaglst.remove(tag)
+        self.taglst.remove(tag)
+
+
+    def getgameinfo(self):
+        added = 0
+        while added < 5 and self.json != []:
+            try:
+                jsonfile = gamescreen.getgameinfo(gamescreen, self.json[0]['appid'])
+                image = general.getimage(general, jsonfile[str(self.json[0]['appid'])]['data']['header_image'], 200,
+                                         int(200*gameratio), 0)
+                self.displayedgames.append({'appid':self.json[0]['appid'],
+                                            'name':self.json[0]['name'],
+                                            'picture':image,
+                                            'price':self.json[0]['price'],
+                                            'tags':self.json[0]['steamspy_tags'].split(';'),
+                                            'positive':self.json[0]['positive_ratings'],
+                                            'negative':self.json[0]['negative_ratings'],
+                                            'release':self.json[0]['release_date']})
+                added += 1
+            except:
+                pass
+            self.json.pop(0)
+
+
+    def displaygames(self, json, startindex):
+        try:
+            self.gameframe.destroy()
+        except:
+            pass
+        self.gameframe = Frame(self.framec,
+                               bg=backgroundmain,
+                               width=750,
+                               height=700)
+        self.gameframe.place(relx=0, rely=1, anchor='sw')
+        self.gotogeneral = lambda x: (lambda y: gamescreen(self.framec, self.root, x))
+        uparrow = False
+        downarrow = True
+        self.json = json
+        if startindex > 0:
+            uparrow = True
+        if startindex+5 > len(self.displayedgames):
+            if self.json != []:
+                self.getgameinfo()
+        totalpages = math.ceil((len(self.displayedgames)+len(self.json))/5)
+        currentpage = math.ceil((startindex+5)/5)
+        if currentpage == totalpages:
+            downarrow = False
+        ind = 0
+        for game in self.displayedgames[startindex:startindex+5]:
+            searchedgamebg = Canvas(self.gameframe,
+                                    bg=backgroundsearchgame,
+                                    borderwidth=0,
+                                    highlightthickness=0,
+                                    width=700,
+                                    height=105)
+            searchedgamebg.place(relx=0.065, rely=0.18+0.16*ind, anchor='w')
+            searchedgamebg.bind('<1>', self.gotogeneral(game['appid']))
+            searchedgame = Label(self.gameframe,
+                                 bg=backgroundmain)
+            searchedgame.image = game['picture']
+            searchedgame.configure(image=game['picture'])
+            searchedgame.place(relx=0.075, rely=0.18+0.16*ind, anchor='w')
+            searchedgame.bind('<1>', self.gotogeneral(game['appid']))
+            gamename = game['name']
+            if len(gamename) > 35:
+                gamename = '{}...'.format(gamename[:32])
+            searchedgamename = Label(self.gameframe,
+                                     text=gamename,
+                                     font=searchgamefont,
+                                     fg=maintxt,
+                                     bg=backgroundsearchgame)
+            searchedgamename.place(relx=0.98, rely=0.13+0.16*ind, anchor='e')
+            searchedgamename.bind('<1>', self.gotogeneral(game['appid']))
+            if type(game['release']) is str:
+                try:
+                    game['release'] = datetime.strptime(game['release'], '%Y-%m-%d').strftime('%d/%m/%Y')
+                except ValueError:
+                    pass
+            else:
+                game['release'] = game['release'].strftime('%d/%m/%Y')
+            searchedgamerelease = Label(self.gameframe,
+                                        text=game['release'],
+                                        font=searchgamefont,
+                                        fg=maintxt,
+                                        bg=backgroundsearchgame)
+            searchedgamerelease.place(relx=0.98, rely=0.16+0.16*ind, anchor='e')
+            searchedgamerelease.bind('<1>', self.gotogeneral(game['appid']))
+            searchedgamepos = Label(self.gameframe,
+                                    text='+ {}'.format(game['positive']),
+                                    font=searchgamefont,
+                                    fg=maintxt,
+                                    bg=backgroundsearchgame)
+            searchedgamepos.place(relx=0.35, rely=0.13+0.16*ind, anchor='w')
+            searchedgamepos.bind('<1>', self.gotogeneral(game['appid']))
+            searchedgameneg = Label(self.gameframe,
+                                    text='- {}'.format(game['negative']),
+                                    font=searchgamefont,
+                                    fg=maintxt,
+                                    bg=backgroundsearchgame)
+            searchedgameneg.place(relx=0.35, rely=0.16+0.16*ind, anchor='w')
+            searchedgameneg.bind('<1>', self.gotogeneral(game['appid']))
+            searchedgameprice = Label(self.gameframe,
+                                     text='€{}'.format(game['price']),
+                                     font=searchgamefont,
+                                     fg=maintxt,
+                                     bg=backgroundsearchgame)
+            searchedgameprice.place(relx=0.98, rely=0.19+0.16*ind, anchor='e')
+            searchedgameprice.bind('<1>', self.gotogeneral(game['appid']))
+            alltags = ''
+            for tag in game['tags'][:4]:
+                alltags += '{}   '.format(tag)
+            searchedgametags = Label(self.gameframe,
+                                     text=alltags,
+                                     font=tagfont,
+                                     fg=maintxt,
+                                     bg=backgroundsearchgame)
+            searchedgametags.place(relx=0.35, rely=0.235+0.16*ind, anchor='w')
+            searchedgameprice.bind('<1>', self.gotogeneral(game['appid']))
+            ind +=1
+        if uparrow:
+            goup = Label(self.gameframe,
+                         bg=backgroundmain)
+            goup.image = self.arrowup
+            goup.configure(image=self.arrowup)
+            goup.place(relx=0.5325, rely=0.05, anchor='center')
+            goup.bind('<1>', lambda x:self.displaygames(json, startindex-5))
+        if downarrow:
+            godown = Label(self.gameframe,
+                           bg=backgroundmain)
+            godown.image = self.arrowdown
+            godown.configure(image=self.arrowdown)
+            godown.place(relx=0.5325, rely=0.95, anchor='center')
+            godown.bind('<1>', lambda x: self.displaygames(json, startindex+5))
+        page = Label()
+        page = Label(self.gameframe,
+                     text='{}/{}'.format(currentpage, totalpages),
+                     font=gamepagefont,
+                     fg=maintxt,
+                     bg=backgroundmain)
+        page.place(relx=1, rely=0.93, anchor='e')
+
+
+    def usesearchterms(self):
+        newjson = self.searchresults.copy()
+        tagfilters = self.taglst
+        sortterm = self.getterm.get()
+        aftertags = []
+        ascending = self.sortorder.get()
+        if tagfilters != []:
+            for game in newjson:
+                gametags = game['steamspy_tags']
+                for tag in tagfilters:
+                    if tag in gametags:
+                        aftertags.append(game)
+                        break
+        else:
+            aftertags = newjson
+        if sortterm != '':
+            if self.sortterms[sortterm] == 'ratio':
+                for item in aftertags:
+                    try:
+                        item['ratio'] = item['positive_ratings']/item['negative_ratings']
+                    except ZeroDivisionError:
+                        item['ratio'] = 100000
+            elif self.sortterms[sortterm] == 'release_date':
+                for item in aftertags:
+                    try:
+                        item['release_date'] = datetime.strptime(item['release_date'], '%Y-%m-%d')
+                    except TypeError:
+                        break
+            aftertags = general.QuickSort(general, aftertags, self.sortterms[sortterm], ascending=self.sortorders[ascending])
+        self.displayedgames = []
+        self.displaygames(aftertags, 0)
+
+
+
 def goodbye():
     print('closing sequence')
     newloginkey = client.login_key
@@ -943,5 +1477,4 @@ def goodbye():
 
 if __name__ == "__main__":
     login()
-    # mainscreen(Luka)
     atexit.register(goodbye)
