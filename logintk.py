@@ -16,6 +16,7 @@ import math
 from datetime import datetime
 import matplotlib.pyplot as plt #pip install matplotlib
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from textwrap import wrap
 
 Luka = '76561198174496762'
 Luka2 = '76561198371592493'
@@ -26,6 +27,8 @@ Henry = '76561198074124658'
 # steamkey = '7139EBA744B55B104024D221C07EFB38'
 steamkey = '783790D02B11E668DE41726C35D66B15'
 steamjson = 'https://raw.githubusercontent.com/tijmenjoppe/AnalyticalSkills-student/master/project/data/steam.json'
+steamlogo = 'https://www.eaolthof.nl/wp-content/uploads/2021/01/steam3.png'
+steamlogostart = 'https://www.eaolthof.nl/wp-content/uploads/2021/01/steam2.png'
 client = SteamClient()
 language = 'en'
 #textkleuren
@@ -44,12 +47,17 @@ discountpercentfont = ('',30,'bold')
 fulldescriptionfont = ('',12)
 searchgamefont = ('',13,'bold')
 tagfont = ('',10,'bold')
+personpagefont = ('',20)
 #achtergrondkleuren
 backgroundlogin = '#1b2838'
 backgroundmain = backgroundlogin
 backgroundtest = 'white'
 backgroundside = '#101822'
 backgroundsearchgame = '#2c3e52'
+# backgroundprofile = '#171e29'
+backgroundprofile = '#1f2e3e'
+onlinecolor = '#57cbde'
+gameplaycolor = '#a3cf06'
 #afmetingen
 sidewidth = 240
 gamebreedte = 260
@@ -57,10 +65,12 @@ gamepagebreedte = 300
 iconbreedte = 30
 iconbreedtemore = 50
 profilepicbreedte = 60
+personprofilebreedte = 200
 screenshotbreedte = 300
 gamenamelength = 20
 namelength = gamenamelength
 steamlogowidth = 150
+loginglogowidth = 250
 gameratio = 215/460  #height/width
 screenshotratio = 338/600
 #algemene variabelen
@@ -118,6 +128,38 @@ class general():
         return False
 
 
+    def average(self, lst):
+        '''Telt alle items van de list bij elkaar op en deelt die door het aantal items'''
+        aver = sum(lst)/len(lst)
+        return aver
+
+
+    def median(self, lst):
+        '''Berekent de middelste waarde'''
+        sortlst = sorted(lst)
+        if len(lst)%2 == 0:
+            outcome = (sortlst[len(sortlst)//2]+sortlst[len(sortlst)//2+1])/2
+        else:
+            outcome = sortlst[len(sortlst)//2+1]
+        return float(outcome)
+
+
+    def var(self, lst):
+        '''De variantie wordt berekent voor elke waarneming het verschil met het gemiddelde te nemen. Vervolgens
+        kwadrateer je die en tel je de verschillen bij elkaar op. Dit deel je dan door het aantal waarnemingen.'''
+        gemiddelde = self.average(self, lst)
+        sum = 0
+        for num in lst:
+            dif = abs(num - gemiddelde)
+            sum += dif ** 2
+        return float(sum / len(lst))
+
+
+    def std(self, lst):
+        '''De standaardafwijking is de wortel van de variantie'''
+        return float(self.var(self, lst) ** 0.5)
+
+
 class login():
     remember = 0
     username = ''
@@ -148,8 +190,9 @@ class login():
         # self.root.iconbitmap('steam_logo.ico')
         self.root.resizable(False, False)
         self.root.configure(bg=backgroundlogin)
-        window_height = 350
-        window_width = 500
+        window_height = 500
+        window_width = 750
+        self.loginscreenlogo = general.getimage(general, steamlogostart, loginglogowidth, int(loginglogowidth*69/191), 0)
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
         x_cordinate = int((screen_width / 2) - (window_width / 2))
@@ -165,49 +208,65 @@ class login():
         self.frame = Frame(self.root,
                            bg=backgroundlogin)
         self.frame.pack(expand=True, fill=BOTH)
+        loginlogo = Label(self.frame,
+                          bg=backgroundlogin)
+        loginlogo.image = self.loginscreenlogo
+        loginlogo.configure(image=self.loginscreenlogo)
+        loginlogo.place(relx=0.5, rely=0.2, anchor='center')
         usertxt = Label(self.frame,
                         text='Username:',
+                        font=profilefont,
                         bg=backgroundlogin,
                         fg=txt)
-        usertxt.place(relx=0.31, rely=0.2)
+        usertxt.place(relx=0.255, rely=0.32)
         self.username = Entry(self.frame,
+                              font=gamepagefont,
                               width=30)
-        self.username.place(relx=0.5, rely=0.275, anchor=CENTER)
+        self.username.place(relx=0.5, rely=0.4, anchor=CENTER)
         self.userwrong = Label(self.frame,
+                               font=profilefont,
                                bg=backgroundlogin,
                                fg=wrong)
-        self.userwrong.place(relx=0.31, rely=0.31)
+        self.userwrong.place(relx=0.255, rely=0.43)
         passtxt = Label(self.frame,
                         text='Password:',
+                        font=profilefont,
                         bg=backgroundlogin,
                         fg=txt)
-        passtxt.place(relx=0.31, rely=0.45)
+        passtxt.place(relx=0.255, rely=0.52)
         self.password = Entry(self.frame,
+                              font=gamepagefont,
                               show="\u2022",
                               width=30)
-        self.password.place(relx=0.5, rely=0.525, anchor=CENTER)
+        self.password.place(relx=0.5, rely=0.6, anchor=CENTER)
         self.passwrong = Label(self.frame,
+                               font=profilefont,
                                bg=backgroundlogin,
                                fg=wrong)
-        self.passwrong.place(relx=0.31, rely=0.56)
+        self.passwrong.place(relx=0.255, rely=0.63)
         self.rem = IntVar()
         remember = Checkbutton(self.frame,
+                               font=gamepagetitlefont,
                                bg=backgroundlogin,
                                activebackground=backgroundlogin,
                                bd=0,
                                variable=self.rem)
-        remember.place(relx=0.305, rely=0.65)
+        remember.place(relx=0.255, rely=0.7)
         remembertxt = Label(self.frame,
                             text='Stay logged in',
+                            font=profilefont,
                             fg=txt,
                             bg=backgroundlogin)
-        remembertxt.place(relx=0.34, rely=0.65)
-        loginbutton = Button(self.frame,
-                             text='login',
-                             width=10,
-                             height=2,
-                             command=self.logingo)
-        loginbutton.place(relx=0.5, rely=0.8, anchor=CENTER)
+        remembertxt.place(relx=0.28, rely=0.72)
+        loginbutton = Label(self.frame,
+                            text='Login',
+                            font=sidefont,
+                            fg=maintxt,
+                            bg=backgroundside,
+                            width=7,
+                            height=2)
+        loginbutton.place(relx=0.74, rely=0.8, anchor='e')
+        loginbutton.bind('<1>', lambda x:self.logingo())
 
 
     def logingo(self):
@@ -223,48 +282,65 @@ class login():
             result = client.login(username=self.usernameinp, password=self.passwordinp)
             if result == EResult.RateLimitExceeded:
                 self.passwrong['text'] = 'Te vaak geprobeerd, probeer later opnieuw'
-            elif result == EResult.InvalidPassword or result == EResult.PasswordUnset:
-                self.passwrong['text'] = 'Username of password is incorrect'
-            elif result == EResult.AccountLoginDeniedNeedTwoFactor:
+            # elif result == EResult.InvalidPassword or result == EResult.PasswordUnset:
+            #     self.passwrong['text'] = 'Username of password is incorrect'
+            # elif result == EResult.AccountLoginDeniedNeedTwoFactor:
+            elif True:
                 self.var = StringVar()
                 self.frame.destroy()
                 self.frame = Frame(self.root,
                                    bg=backgroundlogin)
                 self.frame.pack(expand=True, fill=BOTH)
+                loginlogo = Label(self.frame,
+                                  bg=backgroundlogin)
+                loginlogo.image = self.loginscreenlogo
+                loginlogo.configure(image=self.loginscreenlogo)
+                loginlogo.place(relx=0.5, rely=0.2, anchor='center')
                 authtxt = Label(self.frame,
                                 text='Enter 2FA code:',
+                                font=profilefont,
                                 bg=backgroundlogin,
                                 fg=txt)
-                authtxt.place(relx=0.34, rely=0.25)
+                authtxt.place(relx=0.335, rely=0.39)
                 self.authcode = Entry(self.frame,
-                                      font=('Helvetica', 20, 'bold'),
+                                      font=('Helvetica', 32, 'bold'),
                                       justify='center',
                                       textvariable=self.var,
                                       width=10)
-                self.authcode.place(relx=0.5, rely=0.35, anchor=CENTER)
+                self.authcode.place(relx=0.5, rely=0.5, anchor=CENTER)
                 self.var.trace('w', self.autocap)
                 self.authwrong = Label(self.frame,
+                                       font=profilefont,
                                        bg=backgroundlogin,
                                        fg=wrong)
-                self.authwrong.place(relx=0.34, rely=0.4)
-                authback = Button(self.frame,
-                                  text='Terug',
-                                  width=6,
-                                  height=2,
-                                  command=self.authgoback)
-                authback.place(relx=0.4, rely=0.65, anchor=E)
-                authresend = Button(self.frame,
-                                    text='Resend',
-                                    width=6,
-                                    height=2,
-                                    command=self.authres)
-                authresend.place(relx=0.5, rely=0.65, anchor=CENTER)
-                authsubmit = Button(self.frame,
-                                    text='Login',
-                                    width=6,
-                                    height=2,
-                                    command=self.authsubmit)
-                authsubmit.place(relx=0.6, rely=0.65, anchor=W)
+                self.authwrong.place(relx=0.335, rely=0.57)
+                authback = Label(self.frame,
+                                 text='Terug',
+                                 font=sidefont,
+                                 fg=maintxt,
+                                 bg=backgroundside,
+                                 width=7,
+                                 height=2)
+                authback.place(relx=0.26, rely=0.75, anchor='w')
+                authback.bind('<1>', lambda x:self.authgoback())
+                authresend = Label(self.frame,
+                                   text='Resend',
+                                   font=sidefont,
+                                   fg=maintxt,
+                                   bg=backgroundside,
+                                   width=7,
+                                   height=2)
+                authresend.place(relx=0.5, rely=0.75, anchor='center')
+                authresend.bind('<1>', lambda x:self.authres())
+                authsubmit = Label(self.frame,
+                                   text='Login',
+                                   font=sidefont,
+                                   fg=maintxt,
+                                   bg=backgroundside,
+                                   width=7,
+                                   height=2)
+                authsubmit.place(relx=0.74, rely=0.75, anchor='e')
+                authsubmit.bind('<1>', lambda x:self.authsubmit())
             elif result == EResult.OK:
                 self.root.destroy()
                 self.loginfinal()
@@ -314,21 +390,15 @@ class mainscreen():
     gamesjson = {}
     arrowpicture = 'https://www.eaolthof.nl/wp-content/uploads/2021/01/pijl.jpg'
     gamelist = []
+    friendlist = []
     def gamesget(self):
         games = general.getjson(general, steamjson)
         mainscreen.gamesjson = games
         allgamelist = []
-        gamephoto = []
-        for i in range(9):
-            game = str(mainscreen.gamesjson[i]['appid'])
-            gameurl = 'https://store.steampowered.com/api/appdetails?appids={}&language={}'.format(game, language)
-            gamejson = general.getjson(general, gameurl)
-            gamepic = gamejson[game]['data']['header_image']
-            imagevolgame = general.getimage(general, gamepic, gamebreedte, int(gamebreedte * gameratio), 0)
-            gamephoto.append({'image':imagevolgame, 'appid':game})
         popsort = general.QuickSort(general, games, 'positive_ratings', ascending=False)
         games = self.gamesjson['response']['games']
         popgamesnotinlib = []
+        added = []
         for game in games:
             mainscreen.gamelist.append(game['appid'])
         for game in popsort:
@@ -339,10 +409,55 @@ class mainscreen():
                 gamepic = gamejson[str(game['appid'])]['data']['header_image']
                 imagevolgame = general.getimage(general, gamepic, gamebreedte, int(gamebreedte * gameratio), 0)
                 popgamesnotinlib.append({'image': imagevolgame, 'appid': game['appid']})
+                added.append(game['appid'])
             if len(popgamesnotinlib) >= 9:
                 break
-        allgamelist.append(gamephoto)
-        allgamelist.append(gamephoto)
+        friendplays = []
+        breakout = False
+        for friend in mainscreen.friendlist:
+            friendrecentgameurl = 'http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key={}&steamid={}&format=json'.format(
+                steamkey, friend)
+            recentgames = general.getjson(general, friendrecentgameurl)
+            if recentgames['response'] != {}:
+                for item in recentgames['response']['games']:
+                    if item['appid'] not in mainscreen.gamelist:
+                        gameurl = 'https://store.steampowered.com/api/appdetails?appids={}&language={}'.format(
+                            item['appid'],
+                            language)
+                        gamejson = general.getjson(general, gameurl)
+                        gamepic = gamejson[str(item['appid'])]['data']['header_image']
+                        imagevolgame = general.getimage(general, gamepic, gamebreedte, int(gamebreedte * gameratio), 0)
+                        friendplays.append({'image': imagevolgame, 'appid': item['appid']})
+                    if len(friendplays) >= 9:
+                        breakout = True
+                        break
+            if breakout:
+                break
+        suggested = []
+        tobreak = False
+        for game in self.favorgames:
+            gameinfile = general.binarysearch(general, mainscreen.gamesjson, 'appid', game['appid'])
+            tagtosearch = random.choice(gameinfile['steamspy_tags'].split(';'))
+            currentlength = len(suggested)
+            for item in popsort:
+                if tagtosearch in item['steamspy_tags']:
+                    if item['appid'] not in mainscreen.gamelist and item['appid'] not in added:
+                            gameurl = 'https://store.steampowered.com/api/appdetails?appids={}&language={}'.format(
+                                item['appid'],
+                                language)
+                            gamejson = general.getjson(general, gameurl)
+                            gamepic = gamejson[str(item['appid'])]['data']['header_image']
+                            imagevolgame = general.getimage(general, gamepic, gamebreedte, int(gamebreedte * gameratio), 0)
+                            suggested.append({'image': imagevolgame, 'appid': item['appid']})
+                            added.append(item['appid'])
+                if len(suggested) >= currentlength + 3:
+                    if len(suggested) >= 9:
+                        tobreak = True
+                    break
+            if tobreak:
+                break
+        allgamelist.append(suggested)
+        allgamelist.append(friendplays)
         allgamelist.append(popgamesnotinlib)
         return allgamelist
 
@@ -360,8 +475,7 @@ class mainscreen():
                             bg=backgroundside,
                             width=sidewidth)
         self.framer.pack(side=RIGHT, fill=Y)
-        steamlogo = 'https://www.eaolthof.nl/wp-content/uploads/2020/12/steam.jpg'
-        imagevol = general.getimage(general, steamlogo, steamlogowidth, int(steamlogowidth*46/191), 0)
+        imagevol = general.getimage(general, steamlogo, steamlogowidth, int(steamlogowidth*69/191), 0)
         self.steamlog = Label(self.framel,
                               bg=backgroundside)
         self.steamlog.image = imagevol
@@ -414,7 +528,7 @@ class mainscreen():
                           bg=backgroundside)
         searchbar.grid(row=0, column=1, padx=(380,0), pady=(150,10), sticky='e')
         searchbar.bind('<Return>', lambda x: searchscreen(self.framec, self.framecunder, searchbar.get()))
-        searchicon = 'https://www.eaolthof.nl/wp-content/uploads/2021/01/search.jpg'
+        searchicon = 'https://www.eaolthof.nl/wp-content/uploads/2021/01/zoek2.png'
         searchimage = general.getimage(general, searchicon, 35, 35, 0)
         searchic = Label(self.framesearch,
                          bg=backgroundmain)
@@ -508,7 +622,7 @@ class mainscreen():
         self.sortedgames = general.QuickSort(general, self.gamesjson['response']['games'], 'appid')
         games = self.gamesjson['response']['games']
         gametitle = Label(self.framel,
-                          text='Owned Games:',
+                          text='Owned Games',
                           font=sidefont,
                           fg=maintxt,
                           bg=backgroundside)
@@ -556,26 +670,26 @@ class mainscreen():
     def gamefavorites(self):
         games = self.gamesjson['response']['games']
         fav_games = general.QuickSort(general, games, 'playtime_forever', ascending=False)
-        favorgames = fav_games[:3]
+        self.favorgames = fav_games[:3]
         favortitle = Label(self.framel,
-                           text='Favorite games:',
+                           text='Favorite games',
                            font=sidefont,
                            bg=backgroundside,
                            fg=maintxt)
         favortitle.place(relx=0.1, rely=0.2, anchor='w')
-        self.gamesideshow(favorgames, 0.23)
+        self.gamesideshow(self.favorgames, 0.23)
 
 
     def getfriends(self, steamid):
         friendurl = 'http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key={}&steamid={}&relationship=friend'.format(steamkey, steamid)
         friendjson = general.getjson(general, friendurl)
+        for friend in friendjson['friendslist']['friends']:
+            mainscreen.friendlist.append(friend['steamid'])
         return friendjson
 
 
     def friendtitleshow(self, steamid):
-        friendurl = 'http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key={}&steamid={}&relationship=friend'.format(steamkey, steamid)
-        friendjson = general.getjson(general, friendurl)
-        friends = friendjson['friendslist']['friends']
+        friends = self.getfriends(steamid)['friendslist']['friends']
         personpagesurl = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={}&steamids='.format(steamkey)
         for friend in friends:
             personpagesurl += '{},'.format(friend['steamid'])
@@ -602,7 +716,7 @@ class mainscreen():
                                            'personastate':person['personastate'],
                                            'gameplaying':gameplaying})
         friendtitle = Label(self.framer,
-                          text='Friends:',
+                          text='Friends',
                           font=sidefont,
                           fg=maintxt,
                           bg=backgroundside)
@@ -627,6 +741,7 @@ class mainscreen():
                          fg=maintxt,
                          bg=backgroundside)
         username.place(relx=0.575, rely=0.925, anchor='e')
+        username.bind('<1>', lambda x:self.friendclick(userinfo['steamid']))
         userlogout = Label(self.framer,
                            text='Logout',
                            font=logoutfont,
@@ -639,14 +754,22 @@ class mainscreen():
                            font=logoutfont,
                            fg='gray',
                            bg=backgroundside)
-        userquit.place(relx=0.3, rely=0.95, anchor='e')
+        userquit.place(relx=0.95, rely=0.02, anchor='e')
         userquit.bind('<1>', lambda x:self.root.destroy())
+        minimize = Label(self.framer,
+                           text='Minimize',
+                           font=logoutfont,
+                           fg='gray',
+                           bg=backgroundside)
+        minimize.place(relx=0.05, rely=0.02, anchor='w')
+        minimize.bind('<1>', lambda x:self.root.iconify())
         image = general.getimage(general, userinfo['avatar'], profilepicbreedte, profilepicbreedte, 0)
         userpicture = Label(self.framer,
                             bg=backgroundmain)
         userpicture.image = image
         userpicture.configure(image=image)
         userpicture.place(relx=0.6, rely=0.9)
+        userpicture.bind('<1>', lambda x: self.friendclick(userinfo['steamid']))
         self.showfriends(self.new_personlst[:8], 0.13)
 
 
@@ -699,11 +822,15 @@ class mainscreen():
 
     def friendmoreclick(self):
         self.cleanscreen()
+        list = self.new_personlst.copy()
+        for friend in list:
+            friend['dict'] = friend['id']
         showfulllist(self.framec, self.framecunder, self.new_personlst, 'friends', 'Your friends')
 
 
     def friendclick(self, steamid):
-        print(steamid)
+        self.cleanscreen()
+        personscreen(self.framec, self.framecunder, steamid)
 
 
     def ownedgameclick(self, gameid):
@@ -747,11 +874,14 @@ class showfulllist():
 
 
     def showfriends(self, dict, title):
-        self.clickaction = lambda x: (lambda y: mainscreen.friendclick(mainscreen, x))
+        self.clickaction = lambda x: (lambda y: personscreen(self.framec, self.root, x))
         for friend in dict:
-            profilepicurl = friend['picture']
-            imagevol = general.getimage(general, profilepicurl, iconbreedtemore, iconbreedtemore, 0)
-            friend['picture'] = imagevol
+            if type(friend['picture']) == str:
+                profilepicurl = friend['picture']
+                imagevol = general.getimage(general, profilepicurl, iconbreedtemore, iconbreedtemore, 0)
+                friend['picture'] = imagevol
+            else:
+                break
         self.startindex = 0
         self.displayinfo(dict, self.startindex, title)
 
@@ -1092,6 +1222,388 @@ class librarygame():
             ind += 1
 
 
+class personscreen():
+    def __init__(self, frame, root, steamid):
+        frame.destroy()
+        self.root = root
+        try:
+            self.framec.destroy()
+        except:
+            pass
+        self.framec = Frame(self.root,
+                            bg=backgroundmain)
+        self.framec.pack(fill=BOTH, expand=1)
+        self.displayinfo(steamid)
+
+
+    def getpersoninfo(self, steamid):
+        personurl = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={}&steamids={}'.format(steamkey, steamid)
+        personjson = general.getjson(general, personurl)
+        return personjson
+
+
+    def getrecentgames(self, steamid):
+        recenturl = 'http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key={}&steamid={}&format=json'.format(steamkey, steamid)
+        recentjson = general.getjson(general, recenturl)
+        if recentjson['response'] == {}:
+            return 'private'
+        else:
+            return recentjson
+
+
+    def getownedgames(self, steamid):
+        ownedurl = 'http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={}&steamid={}&format=json&include_appinfo=true&include_played_free_games=true'.format(steamkey, steamid)
+        ownedjson = general.getjson(general, ownedurl)
+        if ownedjson['response'] == {}:
+            return 'private'
+        else:
+            return ownedjson
+
+
+    def displayinfo(self, steamid):
+        personjson = self.getpersoninfo(steamid)
+        personinfo = personjson['response']['players'][0]
+        imageurl = personinfo['avatarfull']
+        image = general.getimage(general, imageurl, personprofilebreedte, personprofilebreedte, 0)
+        profilepic = Label(self.framec,
+                           bg=backgroundmain)
+        profilepic.image = image
+        profilepic.configure(image=image)
+        profilepic.place(relx=0.05, rely=0.2)
+        profilename = Label(self.framec,
+                            text=personinfo['personaname'],
+                            font=discountpercentfont,
+                            fg=maintxt,
+                            bg=backgroundmain)
+        profilename.place(relx=0.25, rely=0.25, anchor='w')
+        if 'realname' in list(personinfo.keys()):
+            profilerealname = Label(self.framec,
+                                    text=personinfo['realname'],
+                                    font=personpagefont,
+                                    fg=maintxt,
+                                    bg=backgroundmain)
+            profilerealname.place(relx=0.25, rely=0.3, anchor='w')
+        personastates = {0:'Offline', 1:'Online', 2:'Busy', 3:'Away', 4:'Snooze', 5:'Looking to Trade', 6:'Looking to Play'}
+        personastate = personinfo['personastate']
+        txtcolor = maintxt
+        personstate = personastates[personastate]
+        if personastate > 0:
+            if 'gameextrainfo' in list(personinfo.keys()):
+                txtcolor = gameplaycolor
+                gamename = personinfo['gameextrainfo']
+                if len(gamename) > 30:
+                    gamename = '{}...'.format(gamename[:27])
+                personstate = 'Playing a game: {}'.format(gamename)
+            else:
+                txtcolor = onlinecolor
+        profilestate = Label(self.framec,
+                             text=personstate,
+                             font=personpagefont,
+                             fg=txtcolor,
+                             bg=backgroundmain)
+        profilestate.place(relx=0.25, rely=0.4, anchor='w')
+        if txtcolor == gameplaycolor:
+            profilestate.bind('<1>', lambda x:gamescreen(self.framec, self.root, personinfo['gameid']))
+        recentgames = self.getrecentgames(steamid)
+        if recentgames == 'private':
+            privateprofile = Label(self.framec,
+                                   text='This profile is private',
+                                   font=discountpercentfont,
+                                   fg='gray',
+                                   bg=backgroundmain)
+            privateprofile.place(relx=0.5, rely=0.6, anchor='center')
+        else:
+            self.gotograph = Label(self.framec,
+                                   text='Graph',
+                                   font=gamepagefont,
+                                   width=15,
+                                   height=2,
+                                   fg=maintxt,
+                                   bg=backgroundprofile)
+            self.gotograph.place(relx=0.72, rely=0.47, anchor='e')
+            self.gotograph.bind('<1>', lambda x:self.gograph())
+            self.gotogeneral = Label(self.framec,
+                                     text='General',
+                                     font=gamepagefont,
+                                     width=15,
+                                     height=2,
+                                     fg=maintxt,
+                                     bg=backgroundmain)
+            self.gotogeneral.place(relx=0.72, rely=0.47, anchor='w')
+            self.gotogeneral.bind('<1>', lambda x:self.gogeneral())
+            self.graphframe = Frame(self.framec,
+                                    bg=backgroundprofile,
+                                    width=self.framec.winfo_screenwidth()-2*sidewidth,
+                                    height=440)
+            self.graphframe.place(relx=0, rely=1, anchor='sw')
+            self.generalframe = Frame(self.framec,
+                                      bg=backgroundprofile,
+                                      width=self.framec.winfo_screenwidth()-2*sidewidth,
+                                      height=440)
+            self.generalframe.place(relx=0, rely=1, anchor='sw')
+            self.generalframe.place_forget()
+            try:
+                combostyle = ttk.Style()
+                combostyle.theme_create('combostyle', parent='alt',
+                                        settings={'TCombobox':
+                                                      {'configure':
+                                                           {'selectbackground': '#2c3e52',
+                                                            'fieldbackground': '#2c3e52',
+                                                            'background': '#1f2e3e',
+                                                            'foreground': 'white',
+                                                            }}})
+                combostyle.theme_use('combostyle')
+            except:
+                pass
+            self.game = StringVar()
+            self.time = StringVar()
+            self.gameframe = Frame()
+            self.gameframe = Frame(self.graphframe,
+                                   bg=backgroundprofile,
+                                   width=205)
+            self.gameframe.place(relx=0.05, rely=0.39, anchor='nw')
+            thegames = self.getownedgames(steamid)['response']['games']
+            thegamessorted = general.QuickSort(general, thegames, 'name')
+            self.postedgames = []
+            self.gamelst = []
+            self.errormsg = False
+            self.gamechange = lambda x: (lambda y: self.deletegame(x))
+            self.allgames = {}
+            for game in thegamessorted:
+                self.allgames[game['name']] = game
+            self.times = {'Last two weeks':'playtime_2weeks', 'Alltime':'playtime_forever'}
+            ownedtxt = Label(self.graphframe,
+                             text='Owned games',
+                             font=gamepagefont,
+                             fg=maintxt,
+                             bg=backgroundprofile)
+            ownedtxt.place(relx=0.05, rely=0.25)
+            self.ownedgames = ttk.Combobox(self.graphframe,
+                                           state='readonly',
+                                           values=list(self.allgames.keys()),
+                                           textvariable=self.game,
+                                           font=gamepagefont,
+                                           width=16)
+            self.ownedgames.place(relx=0.05, rely=0.32)
+            self.ownedgames.bind("<<ComboboxSelected>>", self.changegame)
+            timetxt = Label(self.graphframe,
+                            text='Timespan',
+                            font=gamepagefont,
+                            fg=maintxt,
+                            bg=backgroundprofile)
+            timetxt.place(relx=0.05, rely=0.08)
+            self.timespan = ttk.Combobox(self.graphframe,
+                                         state='readonly',
+                                         values=list(self.times.keys()),
+                                         textvariable=self.time,
+                                         font=gamepagefont,
+                                         width=16)
+            self.timespan.current(0)
+            self.timespan.place(relx=0.05, rely=0.15)
+            confirm = Label(self.graphframe,
+                            text='Make graph',
+                            font=searchgamefont,
+                            width=20,
+                            height=2,
+                            fg=maintxt,
+                            bg=backgroundsearchgame)
+            confirm.place(relx=0.0525, rely=0.8)
+            confirm.bind('<1>', lambda x:self.makenewgraph())
+            recentgamelist = recentgames['response']['games']
+            self.games = []
+            self.time_2weeks = []
+            self.time_forever = []
+            for item in recentgamelist[:5]:
+                self.games.append(item['name'])
+                self.time_2weeks.append(item['playtime_2weeks'])
+                self.time_forever.append(item['playtime_forever'])
+            self.makegraph(self.games, self.time_2weeks)
+            self.timelst = []
+            for game in thegamessorted:
+                self.timelst.append(game['playtime_forever'])
+            averagetime = general.average(general, self.timelst)
+            averageplaytime = Label(self.generalframe,
+                                    text='Average playtime: {} hours'.format(round(averagetime/60, 1)),
+                                    font=gamepagefont,
+                                    fg=maintxt,
+                                    bg=backgroundprofile)
+            averageplaytime.place(relx=0.1, rely=0.1)
+            diff = -1
+            closestgame = ''
+            for thing in thegamessorted:
+                newdiff = abs(thing['playtime_forever']-averagetime)
+                if diff == -1:
+                    closestgame = thing['name']
+                    diff = newdiff
+                elif diff > newdiff:
+                    diff = newdiff
+                    closestgame = thing['name']
+            closesttoaverage = Label(self.generalframe,
+                                     text='Closest to this: {}'.format(closestgame),
+                                     font=gamepagefont,
+                                     fg=maintxt,
+                                     bg=backgroundprofile)
+            closesttoaverage.place(relx=0.15, rely=0.18)
+            mediantime = general.median(general, self.timelst)
+            medianplaytime = Label(self.generalframe,
+                                   text='Median playtime: {} hours'.format(round(mediantime/60, 1)),
+                                   font=gamepagefont,
+                                   fg=maintxt,
+                                   bg=backgroundprofile)
+            medianplaytime.place(relx=0.1, rely=0.32)
+            diff = -1
+            closestgame = ''
+            for thing in thegamessorted:
+                newdiff = abs(thing['playtime_forever']-mediantime)
+                if diff == -1:
+                    closestgame = thing['name']
+                    diff = newdiff
+                elif diff > newdiff:
+                    diff = newdiff
+                    closestgame = thing['name']
+            closesttomedian = Label(self.generalframe,
+                                    text='Closest to this: {}'.format(closestgame),
+                                    font=gamepagefont,
+                                    fg=maintxt,
+                                    bg=backgroundprofile)
+            closesttomedian.place(relx=0.15, rely=0.4)
+            hourlist = [round(time/60, 1) for time in self.timelst]
+            variance = Label(self.generalframe,
+                             text='Variance: {}'.format(round(general.var(general, hourlist), 1)),
+                             font=gamepagefont,
+                             fg=maintxt,
+                             bg=backgroundprofile)
+            variance.place(relx=0.1, rely=0.6)
+            standarddev = Label(self.generalframe,
+                             text='Standard deviation: {}'.format(round(general.std(general, hourlist), 1)),
+                             font=gamepagefont,
+                             fg=maintxt,
+                             bg=backgroundprofile)
+            standarddev.place(relx=0.1, rely=0.7)
+
+
+    def gograph(self):
+        self.gotogeneral['bg'] = backgroundmain
+        self.gotograph['bg'] = backgroundprofile
+        self.generalframe.place_forget()
+        self.graphframe.place(relx=0, rely=1, anchor='sw')
+
+
+    def gogeneral(self):
+        self.gotogeneral['bg'] = backgroundprofile
+        self.gotograph['bg'] = backgroundmain
+        self.graphframe.place_forget()
+        self.generalframe.place(relx=0, rely=1, anchor='sw')
+
+
+    def makegraph(self, xlst, ylst):
+        try:
+            self.thegraph.destroy()
+        except:
+            pass
+        self.thegraph = Frame(self.graphframe,
+                              width=700,
+                              height=400,
+                              bg=backgroundprofile)
+        self.thegraph.place(relx=0.625, rely=0.5, anchor='center')
+        xlist = ['\n'.join(wrap(l, 15)) for l in xlst]
+        ylist = [round(m/60, 1) for m in ylst]
+        font = {'family': 'arial', 'size': 7}
+        plt.rc('font', **font)
+        fig = plt.figure(figsize=(6, 3.75))
+        plt.bar(x=xlist, height=ylist)
+        # plt.tight_layout(rect=[0,0,0,0])
+        fig.tight_layout(rect=[0.03, 0.03, 1, 0.95])
+        plt.xlabel('Games')
+        plt.ylabel('Hours played')
+        plt.title('Time played {}'.format(self.time.get()))
+        canvas = FigureCanvasTkAgg(fig, master=self.thegraph)
+        canvas.draw()
+        canvas.get_tk_widget().place(relx=0.5, rely=0.5, anchor='center')
+
+
+    def makenewgraph(self):
+        timespan = self.time.get()
+        listedgames = self.postedgames
+        games = []
+        time = []
+        if listedgames == []:
+            if self.times[timespan] == 'playtime_2weeks':
+                self.makegraph(self.games, self.time_2weeks)
+            elif self.times[timespan] == 'playtime_forever':
+                self.makegraph(self.games, self.time_forever)
+        else:
+            for game in listedgames:
+                games.append(self.allgames[game]['name'])
+                if self.times[timespan] == 'playtime_2weeks':
+                    if 'playtime_2weeks' not in self.allgames[game].keys():
+                        time.append(0)
+                    else:
+                        time.append(self.allgames[game][self.times[timespan]])
+                else:
+                    time.append(self.allgames[game][self.times[timespan]])
+            self.makegraph(games, time)
+
+
+    def changegame(self, event):
+        game = self.game.get()
+        if game not in self.gamelst:
+            if len(self.gamelst) >= 5:
+                if not self.errormsg:
+                    error = Label(self.gameframe,
+                                  text='The limit is 5 games',
+                                  justify=LEFT,
+                                  font=tagfont,
+                                  fg=wrong,
+                                  bg=backgroundmain)
+                    error.pack(pady=2, anchor='w')
+                    self.errormsg = True
+            else:
+                self.gamelst.append(game)
+                self.addgame()
+
+
+    def addgame(self):
+        for game in self.gamelst:
+            if game not in self.postedgames:
+                self.postedgames.append(game)
+                if len(game) > 25:
+                    gametxt = '{}...'.format(game[:22])
+                else:
+                    gametxt = game
+                newgame = Label(self.gameframe,
+                                text=gametxt,
+                                justify=LEFT,
+                                font=tagfont,
+                                fg=maintxt,
+                                bg=backgroundside)
+                newgame.pack(pady=2, anchor='w')
+                newgame.bind('<1>', self.gamechange(game))
+
+
+    def deletegame(self, game):
+        self.gameframe.destroy()
+        self.gameframe = Frame(self.graphframe,
+                               bg=backgroundmain,
+                               width=205)
+        self.gameframe.place(relx=0.05, rely=0.39, anchor='nw')
+        for lstgame in self.postedgames:
+            if lstgame != game:
+                if len(lstgame) > 25:
+                    gametxt = '{}...'.format(lstgame[:22])
+                else:
+                    gametxt = lstgame
+                newgame = Label(self.gameframe,
+                                text=gametxt,
+                                font=tagfont,
+                                fg=maintxt,
+                                bg=backgroundside)
+                newgame.pack(pady=2, anchor='w')
+                newgame.bind('<1>', self.gamechange(lstgame))
+        self.postedgames.remove(game)
+        self.gamelst.remove(game)
+
+
 class searchscreen():
     def __init__(self, frame, root, searchterm):
         frame.destroy()
@@ -1137,7 +1649,7 @@ class searchscreen():
         searchbar.place(relx=0.05, rely=0.1)
         searchbar.bind('<Return>', lambda x: searchscreen(self.framec, self.root, searchbar.get()))
         searchbar.insert(0, searchterm)
-        searchicon = 'https://www.eaolthof.nl/wp-content/uploads/2021/01/search.jpg'
+        searchicon = 'https://www.eaolthof.nl/wp-content/uploads/2021/01/zoek2.png'
         searchimage = general.getimage(general, searchicon, 35, 35, 0)
         searchic = Label(self.framec,
                          bg=backgroundmain)
@@ -1174,7 +1686,7 @@ class searchscreen():
             except:
                 pass
             self.sortterms = {'Name': 'name', 'Release date': 'release_date', 'Positive ratings': 'positive_ratings',
-                              'Negative ratings': 'negative_ratings', 'Ratings ratio':'ratio',
+                              'Negative ratings': 'negative_ratings', 'Owners':'owners', 'Ratings ratio':'ratio',
                               'Price': 'price'}
             self.sortorders = {'Ascending': True, 'Descending': False}
             self.taglst = []
@@ -1304,7 +1816,8 @@ class searchscreen():
                                             'tags':self.json[0]['steamspy_tags'].split(';'),
                                             'positive':self.json[0]['positive_ratings'],
                                             'negative':self.json[0]['negative_ratings'],
-                                            'release':self.json[0]['release_date']})
+                                            'release':self.json[0]['release_date'],
+                                            'owners':self.json[0]['owners']})
                 added += 1
             except:
                 pass
@@ -1351,8 +1864,8 @@ class searchscreen():
             searchedgame.place(relx=0.075, rely=0.18+0.16*ind, anchor='w')
             searchedgame.bind('<1>', self.gotogeneral(game['appid']))
             gamename = game['name']
-            if len(gamename) > 35:
-                gamename = '{}...'.format(gamename[:32])
+            if len(gamename) > 25:
+                gamename = '{}...'.format(gamename[:22])
             searchedgamename = Label(self.gameframe,
                                      text=gamename,
                                      font=searchgamefont,
@@ -1374,22 +1887,38 @@ class searchscreen():
                                         bg=backgroundsearchgame)
             searchedgamerelease.place(relx=0.98, rely=0.16+0.16*ind, anchor='e')
             searchedgamerelease.bind('<1>', self.gotogeneral(game['appid']))
+            owners = str(game['owners'])
+            if 3 < len(owners) < 7:
+                owners = '{}.{}'.format(owners[:-3], owners[-3:])
+            elif 6 < len(owners) < 10:
+                owners = '{}.{}.{}'.format(owners[:-6], owners[-6:-3], owners[-3:])
+            searchedgameowners = Label(self.gameframe,
+                                       text='{} owners'.format(owners),
+                                       font=searchgamefont,
+                                       fg=maintxt,
+                                       bg=backgroundsearchgame)
+            searchedgameowners.place(relx=0.35, rely=0.13+0.16*ind, anchor='w')
+            searchedgameowners.bind('<1>', self.gotogeneral(game['appid']))
             searchedgamepos = Label(self.gameframe,
                                     text='+ {}'.format(game['positive']),
                                     font=searchgamefont,
                                     fg=maintxt,
                                     bg=backgroundsearchgame)
-            searchedgamepos.place(relx=0.35, rely=0.13+0.16*ind, anchor='w')
+            searchedgamepos.place(relx=0.35, rely=0.16+0.16*ind, anchor='w')
             searchedgamepos.bind('<1>', self.gotogeneral(game['appid']))
             searchedgameneg = Label(self.gameframe,
                                     text='- {}'.format(game['negative']),
                                     font=searchgamefont,
                                     fg=maintxt,
                                     bg=backgroundsearchgame)
-            searchedgameneg.place(relx=0.35, rely=0.16+0.16*ind, anchor='w')
+            searchedgameneg.place(relx=0.35, rely=0.19+0.16*ind, anchor='w')
             searchedgameneg.bind('<1>', self.gotogeneral(game['appid']))
+            if game['price'] == 0.0:
+                price = 'Free'
+            else:
+                price = '€{}'.format(game['price'])
             searchedgameprice = Label(self.gameframe,
-                                     text='€{}'.format(game['price']),
+                                     text=price,
                                      font=searchgamefont,
                                      fg=maintxt,
                                      bg=backgroundsearchgame)
@@ -1444,6 +1973,14 @@ class searchscreen():
                         break
         else:
             aftertags = newjson
+        for dict in aftertags:
+            try:
+                values = dict['owners'].split('-')
+                for i in range(len(values)):
+                    values[i] = int(values[i])
+                dict['owners'] = int(general.average(general, values))
+            except AttributeError:
+                break
         if sortterm != '':
             if self.sortterms[sortterm] == 'ratio':
                 for item in aftertags:
@@ -1459,7 +1996,7 @@ class searchscreen():
                         break
             aftertags = general.QuickSort(general, aftertags, self.sortterms[sortterm], ascending=self.sortorders[ascending])
         self.displayedgames = []
-        self.displaygames(aftertags, 0)
+        self.displaygames(aftertags.copy(), 0)
 
 
 
@@ -1469,9 +2006,10 @@ def goodbye():
     if newloginkey is None:
         newloginkey = login.loginkey
     sessiontxt = '{}\n{}\n{}'.format(login.remember, client.username, newloginkey)
-    if int(login.remember) == 1:
-        with open('session.txt', 'w') as sessionfile:
-            sessionfile.write(sessiontxt)
+    if int(login.remember) == 0:
+        sessiontxt = '{}\n{}\n{}'.format(0, None, None)
+    with open('session.txt', 'w') as sessionfile:
+        sessionfile.write(sessiontxt)
     client.logout()
 
 
