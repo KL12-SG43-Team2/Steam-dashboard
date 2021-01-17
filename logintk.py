@@ -1313,28 +1313,43 @@ class personscreen():
             privateprofile.place(relx=0.5, rely=0.6, anchor='center')
         else:
             self.gotograph = Label(self.framec,
-                                   text='Graph',
+                                   text='Playtime graph',
                                    font=gamepagefont,
                                    width=15,
                                    height=2,
                                    fg=maintxt,
                                    bg=backgroundprofile)
-            self.gotograph.place(relx=0.72, rely=0.47, anchor='e')
+            self.gotograph.place(relx=0.624, rely=0.47, anchor='e')
             self.gotograph.bind('<1>', lambda x:self.gograph())
+            self.gotogengraph = Label(self.framec,
+                                      text='Genres graph',
+                                      font=gamepagefont,
+                                      width=15,
+                                      height=2,
+                                      fg=maintxt,
+                                      bg=backgroundmain)
+            self.gotogengraph.place(relx=0.8, rely=0.47, anchor='e')
+            self.gotogengraph.bind('<1>', lambda x:self.gogengraph())
             self.gotogeneral = Label(self.framec,
-                                     text='General',
+                                     text='Measures',
                                      font=gamepagefont,
                                      width=15,
                                      height=2,
                                      fg=maintxt,
                                      bg=backgroundmain)
-            self.gotogeneral.place(relx=0.72, rely=0.47, anchor='w')
+            self.gotogeneral.place(relx=0.8, rely=0.47, anchor='w')
             self.gotogeneral.bind('<1>', lambda x:self.gogeneral())
             self.graphframe = Frame(self.framec,
                                     bg=backgroundprofile,
                                     width=self.framec.winfo_screenwidth()-2*sidewidth,
                                     height=440)
             self.graphframe.place(relx=0, rely=1, anchor='sw')
+            self.gengraphframe = Frame(self.framec,
+                                       bg=backgroundprofile,
+                                       width=self.framec.winfo_screenwidth()-2*sidewidth,
+                                       height=440)
+            self.gengraphframe.place(relx=0, rely=1, anchor='sw')
+            self.gengraphframe.place_forget()
             self.generalframe = Frame(self.framec,
                                       bg=backgroundprofile,
                                       width=self.framec.winfo_screenwidth()-2*sidewidth,
@@ -1483,14 +1498,27 @@ class personscreen():
 
     def gograph(self):
         self.gotogeneral['bg'] = backgroundmain
+        self.gotogengraph['bg'] = backgroundmain
         self.gotograph['bg'] = backgroundprofile
+        self.gengraphframe.place_forget()
         self.generalframe.place_forget()
         self.graphframe.place(relx=0, rely=1, anchor='sw')
 
 
+    def gogengraph(self):
+        self.gotogeneral['bg'] = backgroundmain
+        self.gotogengraph['bg'] = backgroundprofile
+        self.gotograph['bg'] = backgroundmain
+        self.graphframe.place_forget()
+        self.generalframe.place_forget()
+        self.gengraphframe.place(relx=0, rely=1, anchor='sw')
+
+
     def gogeneral(self):
         self.gotogeneral['bg'] = backgroundprofile
+        self.gotogengraph['bg'] = backgroundmain
         self.gotograph['bg'] = backgroundmain
+        self.gengraphframe.place_forget()
         self.graphframe.place_forget()
         self.generalframe.place(relx=0, rely=1, anchor='sw')
 
@@ -1511,7 +1539,6 @@ class personscreen():
         plt.rc('font', **font)
         fig = plt.figure(figsize=(6, 3.75))
         plt.bar(x=xlist, height=ylist)
-        # plt.tight_layout(rect=[0,0,0,0])
         fig.tight_layout(rect=[0.03, 0.03, 1, 0.95])
         plt.xlabel('Games')
         plt.ylabel('Hours played')
