@@ -282,10 +282,9 @@ class login():
             result = client.login(username=self.usernameinp, password=self.passwordinp)
             if result == EResult.RateLimitExceeded:
                 self.passwrong['text'] = 'Te vaak geprobeerd, probeer later opnieuw'
-            # elif result == EResult.InvalidPassword or result == EResult.PasswordUnset:
-            #     self.passwrong['text'] = 'Username of password is incorrect'
-            # elif result == EResult.AccountLoginDeniedNeedTwoFactor:
-            elif True:
+            elif result == EResult.InvalidPassword or result == EResult.PasswordUnset:
+                self.passwrong['text'] = 'Username of password is incorrect'
+            elif result == EResult.AccountLoginDeniedNeedTwoFactor:
                 self.var = StringVar()
                 self.frame.destroy()
                 self.frame = Frame(self.root,
