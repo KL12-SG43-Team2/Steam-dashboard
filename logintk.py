@@ -1023,9 +1023,13 @@ class gamescreen():
                          fg=maintxt,
                          bg=backgroundmain)
         gamename.place(relx=0.05, rely=0.38)
+        date = steamjson['release_date']
+        if type(date) != str:
+            date = date.strftime('%d-%m-%Y')
+        # print(type(steamjson['release_date']))
         if steamjson != False:
             release = Label(self.framec,
-                              text='Release date: {}'.format(steamjson['release_date']),
+                              text='Release date: {}'.format(date),
                               font=gamepagefont,
                               fg=maintxt,
                               bg=backgroundmain)
@@ -1435,6 +1439,40 @@ class personscreen():
             self.timelst = []
             for game in thegamessorted:
                 self.timelst.append(game['playtime_forever'])
+            gameidlist = []
+            genres = []
+            frequency = []
+            freqs = dict()
+            for thing in thegames:
+                gameidlist.append(thing['appid'])
+            for gameid in gameidlist:
+                result = general.binarysearch(general, mainscreen.gamesjson, 'appid', gameid)
+                if result:
+                    splittedlist = result['genres'].split(';')
+                    for genre in splittedlist:
+                        genres.append(genre)
+            for genr in genres:
+                if genr in freqs.keys():
+                    freqs[genr] += 1
+                else:
+                    freqs[genr] = 1
+            sortedgenres = sorted(freqs, key=freqs.get)
+            sortedgenres.reverse()
+            sortedgenres = sortedgenres[:8]
+            for genrefreq in sortedgenres:
+                frequency.append(freqs[genrefreq])
+            sortedgenres = ['\n'.join(wrap(l, 15)) for l in sortedgenres]
+            font = {'family': 'arial', 'size': 7}
+            plt.rc('font', **font)
+            fig = plt.figure(figsize=(9, 4))
+            fig.tight_layout(rect=[0.03, 0.03, 0.95, 0.95])
+            plt.bar(x=sortedgenres, height=frequency)
+            plt.xlabel("genres")
+            plt.ylabel("frequency")
+            plt.title('Genres you play the most')
+            canvas = FigureCanvasTkAgg(fig, master=self.gengraphframe)
+            canvas.draw()
+            canvas.get_tk_widget().place(relx=0.5, rely=0.5, anchor='center')
             averagetime = general.average(general, self.timelst)
             averageplaytime = Label(self.generalframe,
                                     text='Average playtime: {} hours'.format(round(averagetime/60, 1)),
