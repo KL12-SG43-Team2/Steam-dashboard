@@ -20,7 +20,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from textwrap import wrap
 import copy
 
-
 # steamkey = '7139EBA744B55B104024D221C07EFB38'
 steamkey = '783790D02B11E668DE41726C35D66B15'
 steamjson = 'https://raw.githubusercontent.com/tijmenjoppe/AnalyticalSkills-student/master/project/data/steam.json'
@@ -74,13 +73,17 @@ screenshotratio = 338/600
 
 
 class general():
+    '''Deze class omvat algemene functies voor data ophalen en statistieken berekenen'''
     def getjson(self, link):
+        '''Deze functie haalt een json bestand op van een link'''
         res = requests.get(link)
         info = res.json()
         return info
 
 
     def getimage(self, link, width, height, rotation):
+        '''Deze functie maakt een afbeelding op basis van de link, de breedte, de hoogte en de rotatie.
+        De functie returned dan een volledige afbeelding om op het scherm te laten zien'''
         raw_data = urllib.request.urlopen(link).read()
         image = Image.open(io.BytesIO(raw_data))
         image = image.resize((width, height), Image.ANTIALIAS)
@@ -111,6 +114,11 @@ class general():
 
 
     def binarysearch(self, lst, key, target):
+        '''De ingevoerde lijst moet in een oplopende volgorde staan. Pakt eerst de middelste waarde en vergelijkt deze
+        met de target. Als de target gelijk is aan de middelste waarde wordt de middelste waarde gereturned. Als de target
+        groter is dan de middelste waarde wordt deze functie opnieuw aangeroepen met het deel van de lijst na de middelste
+        waarde. Als de target dan kleiner is dan de middelste waarde wordt de functie ook opnieuw aangeroepen, maar dan met
+        het deel van de lijst voor de middelste waarde. Als hier op den duur niks uit komt wordt 'False' gereturned.'''
         new_lst = lst.copy()
         aver = int((len(lst) - 1) / 2)
         if new_lst != []:
@@ -158,10 +166,13 @@ class general():
 
 
 class login():
+    '''Deze class kijkt eerst in de txt file voor eventuele login info. Als de informatie daarin geldig is, word je doorverwezen
+    naar het hoofdscherm. Als dit niet het geval is verschijnt het loginscherm'''
     remember = 0
     username = ''
     loginkey = None
     def __init__(self):
+        '''Leest de txt file in en stuurt je door.'''
         with open('session.txt', 'r') as sessioncheck:
             session = sessioncheck.read()
         self.sessiondata = session.split('\n')
@@ -182,9 +193,9 @@ class login():
 
 
     def logscreen(self):
+        '''Bouwt de window voor het loginscherm.'''
         self.root = Tk()
         self.root.title('Steam login')
-        # self.root.iconbitmap('steam_logo.ico')
         self.root.resizable(False, False)
         self.root.configure(bg=backgroundlogin)
         window_height = 500
@@ -202,6 +213,7 @@ class login():
 
 
     def logprompt(self):
+        '''Maakt de widgets om het loginscherm af te maken.'''
         self.frame = Frame(self.root,
                            bg=backgroundlogin)
         self.frame.pack(expand=True, fill=BOTH)
@@ -267,6 +279,8 @@ class login():
 
 
     def logingo(self):
+        '''Deze functie wordt uitgevoerd als je op de loginknop drukt. Als dit goed gaat ga je naar het hoofdscherm.
+        Zal verschillende errors op verschillende manieren afhandelen. Zal ook het 2FA scherm prompten als dat nodig is.'''
         self.usernameinp = self.username.get()
         self.passwordinp = self.password.get()
         self.userwrong['text'] = ''
@@ -345,10 +359,12 @@ class login():
 
 
     def autocap(self, *arg):
+        '''Deze functie maakt van de input voor het 2FA scherm hoofdletters.'''
         self.var.set(self.var.get().upper())
 
 
     def authgoback(self):
+        '''Deze functie zorgt ervoor dat als je terug wilt naar het loginscherm, je gegevens weer in de invoervelden komen.'''
         self.frame.destroy()
         self.logprompt()
         self.username.insert(0, self.usernameinp)
@@ -356,6 +372,8 @@ class login():
 
 
     def authsubmit(self):
+        '''Deze functie voert uit als je op de login knop drukt op het 2FA scherm. De functie checkt dan voor errors en stuurt
+        je bij een geslaagde login door naar het hoofdscherm'''
         self.authwrong['text'] = ''
         twoFAcode = self.authcode.get()
         result = client.login(username=self.usernameinp, password=self.passwordinp, two_factor_code=twoFAcode)
@@ -371,10 +389,13 @@ class login():
 
 
     def authres(self):
+        '''Deze functie verstuurd de 2FA code opnieuw naar je mobiel.'''
         client.login(username=self.usernameinp, password=self.passwordinp)
 
 
     def loginfinal(self):
+        '''Deze functie stuurt je door naar het hoofdscherm en slaat de keuze op die je gemaakt heb toen je werd gevraagd
+        of je ingelogd wilde blijven of niet.'''
         try:
             login.remember = self.rem.get()
         except:
@@ -383,11 +404,13 @@ class login():
 
 
 class mainscreen():
+    '''Deze class laat het hoofdscherm zien'''
     gamesjson = {}
     arrowpicture = 'https://www.eaolthof.nl/wp-content/uploads/2021/01/pijl.jpg'
     gamelist = []
     friendlist = []
     def gamesget(self):
+        '''Deze functie haalt de games op die gesuggereerd worden in het midden van het hoofdscherm.'''
         games = general.getjson(general, steamjson)
         mainscreen.gamesjson = games
         allgamelist = []
@@ -461,6 +484,7 @@ class mainscreen():
 
 
     def __init__(self, steamid):
+        '''Deze functie maakt de window en zet daar alvast een paar frames in.'''
         self.root = Tk()
         self.root.attributes('-fullscreen', True)
         self.root.bind('<F8>', lambda sluiten:self.root.destroy())
@@ -490,6 +514,7 @@ class mainscreen():
 
 
     def cleanscreen(self):
+        '''Deze functie maakt het middelste deel van het scherm leeg voor wanneer er naar een nieuw scherm wordt genavigeerd.'''
         self.framecunder.destroy()
         self.framecunder = Frame(self.root,
                             bg=backgroundmain)
@@ -497,6 +522,7 @@ class mainscreen():
 
 
     def gameshow(self):
+        '''Deze functie zet de titels van de gesuggereerde games neer en maakt ook frames voor elke rij.'''
         self.gamerows = []
         try:
             self.framecunder.destroy()
@@ -563,25 +589,29 @@ class mainscreen():
 
 
     def gameclick(self, gameid):
+        '''Deze functie wordt uitgevoerd als je op een gesuggereerde game klikt. Je wordt dan doorverwezen naar de gamepagina.'''
         self.cleanscreen()
         gamescreen(self.framec, self.framecunder, gameid)
 
 
     def gameleft(self, object, numb, gamelist):
+        '''Deze functie zorgt ervoor dat je naar links kan navigeren in de gesuggereerde games.'''
         numb -= 3
         if numb < 0:
-            numb = 6
+            numb = len(gamelist)-3
         self.gameshift(object, numb, gamelist)
 
 
     def gameright(self, object, numb, gamelist):
+        '''Deze functie zorgt ervoor dat je naar rechts kan navigeren in de gesuggereerde games.'''
         numb += 3
-        if numb > 6:
+        if numb > len(gamelist)-3:
             numb = 0
         self.gameshift(object, numb, gamelist)
 
 
     def gameshift(self, object, numb, gamelist):
+        '''Deze functie laat de gesuggereerde games zien op basis van een gegeven startindex. Laat er altijd maar 3 van de 9 zien.'''
         gamegoleft = lambda x: (lambda y: self.gameleft(x, numb, gamelist))
         gamegoright = lambda x: (lambda y: self.gameright(x, numb, gamelist))
         for j in range(3):
@@ -609,12 +639,16 @@ class mainscreen():
 
 
     def getownedgames(self, steamid):
+        '''Deze functie haalt games op die de persoon die heeft ingelogd bezit.'''
         gamelib = 'http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={}&steamid={}&format=json&include_appinfo=true&include_played_free_games=true'.format(steamkey, steamid)
         gamesjson = general.getjson(general, gamelib)
         return gamesjson
 
 
     def gamesidetitleshow(self, steamid):
+        '''Deze functie zet de titels van de weergegeven games aan de linkerkant van het scherm. Laat ook zien hoeveel games
+        er nog zijn die niet worden weergegeven. Als je op de text klikt van hoeveel games je nog meer hebt wordt er een scherm
+        weergegeven met alle games in het bezit van de ingelogde persoon.'''
         self.gamepageshow = lambda x: (lambda y: self.gameclick(x))
         self.ownedgamepage = lambda x: (lambda y: self.ownedgameclick(x))
         self.gamesjson = self.getownedgames(steamid)
@@ -639,6 +673,8 @@ class mainscreen():
 
 
     def gamesideshow(self, games, y):
+        '''Deze functie geeft maximaal 8 games weer die de persoon die heeft ingelogd bezit. Als je erop klikt ga je naar de
+        pagina van games die je bezit.'''
         ind=0
         for game in games:
             gameicurl = 'http://media.steampowered.com/steamcommunity/public/images/apps/{}/{}.jpg'.format(game['appid'], game['img_icon_url'])
@@ -662,11 +698,14 @@ class mainscreen():
 
 
     def gamemoreclick(self):
+        '''Deze functie navigeert je naar de volledige lijst van bezitte games.'''
         self.cleanscreen()
         showfulllist(self.framec, self.framecunder, self.gamesjson, 'games', 'Your library')
 
 
     def gamefavorites(self):
+        '''Deze functies sorteert de bezitte games op playtime en laat de drie games met de meeste playtime zien als
+        'favorite games'.'''
         games = self.gamesjson['response']['games']
         fav_games = general.QuickSort(general, games, 'playtime_forever', ascending=False)
         self.favorgames = fav_games[:3]
@@ -680,6 +719,7 @@ class mainscreen():
 
 
     def getfriends(self, steamid):
+        '''Deze functie haalt de volledige vriendenlijst op van de persoon die is ingelogd.'''
         friendurl = 'http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key={}&steamid={}&relationship=friend'.format(steamkey, steamid)
         friendjson = general.getjson(general, friendurl)
         for friend in friendjson['friendslist']['friends']:
@@ -688,6 +728,8 @@ class mainscreen():
 
 
     def friendtitleshow(self, steamid):
+        '''Deze functie zet alvast de titel neer aan de rechterkant van het scherm en geeft ook weer hoeveel vrienden je nog meer
+        hebt naast de 8 die al weergeven worden.'''
         friends = self.getfriends(steamid)['friendslist']['friends']
         personpagesurl = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={}&steamids='.format(steamkey)
         for friend in friends:
@@ -773,6 +815,9 @@ class mainscreen():
 
 
     def showfriends(self, friends, y):
+        '''Deze functie laat de vrienden zien met profielfoto erbij. Ook zal de profielfoto een andere rand hebben op basis van de
+        status van de vriend. Groen als de vriend een spel aan het spelen is (het gespeelde spel wordt ook weergeven) en blauw als
+        de vriend online is. Als de vriend offline is zal er geen rand zijn.'''
         self.friendpageshow = lambda x: (lambda y: self.friendclick(x))
         ind = 0
         for person in friends:
@@ -820,6 +865,7 @@ class mainscreen():
 
 
     def friendmoreclick(self):
+        '''Deze functie navigeert je naar het scherm waarop je je volledige vriendenlijst kan zien.'''
         self.cleanscreen()
         list = self.new_personlst.copy()
         for friend in list:
@@ -828,16 +874,19 @@ class mainscreen():
 
 
     def friendclick(self, steamid):
+        '''Deze functie navigeert je naar het vriendenscherm als je op een vriend klikt.'''
         self.cleanscreen()
         personscreen(self.framec, self.framecunder, steamid)
 
 
     def ownedgameclick(self, gameid):
+        '''Deze functie navigeert je naar het scherm van een game die je bezit.'''
         self.cleanscreen()
         librarygame(self.framec, self.framecunder, general.binarysearch(general, self.sortedgames, 'appid', gameid))
 
 
     def logout(self):
+        '''Deze functie zorgt ervoor dat de client uitlogt, de txt file gecleard en je weer geprompt wordt met het loginscherm.'''
         client.logout()
         self.root.destroy()
         with open('session.txt', 'w') as sessionfile:
@@ -846,7 +895,10 @@ class mainscreen():
 
 
 class showfulllist():
+    '''Deze class laat de items zien die niet binnen het hoofdscherm passen. Werkt voor zowel games als vrienden.'''
     def __init__(self, frame, root, dict, mode, title):
+        '''Deze functie verwijderd de meegegeven frame zodat het scherm bij het begin leeg is. Ook bepaald deze functie
+        of deze pagina voor games of vrienden zal zijn.'''
         frame.destroy()
         self.root = root
         self.cleanscreen()
@@ -857,6 +909,8 @@ class showfulllist():
 
 
     def showgames(self, dict, title):
+        '''Deze functie wordt uitgevoerd als er games moeten worden weergegeven. Maakt nieuwe dictionary zodat deze universeel
+        leesbaar is.'''
         gamelist = dict['response']['games']
         self.clickaction = lambda x: (lambda y: librarygame(self.framec, self.root, x))
         self.gamepictures = []
@@ -873,6 +927,8 @@ class showfulllist():
 
 
     def showfriends(self, dict, title):
+        '''Deze functie wordt uitgevoerd als er vrienden moeten worden weergegeven. Maakt nieuwe dictionary zodat deze universeel
+        leesbaar is.'''
         self.clickaction = lambda x: (lambda y: personscreen(self.framec, self.root, x))
         for friend in dict:
             if type(friend['picture']) == str:
@@ -886,6 +942,8 @@ class showfulllist():
 
 
     def displayinfo(self, dict, startindex, title):
+        '''Deze functie laat alle games zien van de meegegeven lijst met dictionaries. Laat er dan maximaal 15 zien en laat
+        pijlen zien als er nog meer games boven of onder de aangegeven games staan.'''
         arrowup = False
         arrowdown = True
         self.arrowupimage = general.getimage(general, mainscreen.arrowpicture, 80, 80, 90)
@@ -960,18 +1018,21 @@ class showfulllist():
 
 
     def dictup(self, dict, title):
+        '''Deze functie zorgt ervoor dat je naar de vorige 15 games gaat in de lijst als je op de pijl naar boven drukt.'''
         self.startindex -= 15
         self.cleanscreen()
         self.displayinfo(dict, self.startindex, title)
 
 
     def dictdown(self, dict, title):
+        '''Deze functie zorgt ervoor dat je naar de volgende 15 games gaat in de lijst als je op de pijl naar onder drukt.'''
         self.startindex += 15
         self.cleanscreen()
         self.displayinfo(dict, self.startindex, title)
 
 
     def cleanscreen(self):
+        '''Deze functie maakt het scherm helemaal leeg voor als er genavigeerd moet worden naar een ander scherm.'''
         try:
             self.framec.destroy()
         except:
@@ -982,7 +1043,10 @@ class showfulllist():
 
 
 class gamescreen():
+    '''Deze class is voor een gamepagina waarop wat algemene informatie wordt weergegeven.'''
     def __init__(self, frame, root, appid):
+        '''Deze functie maakt het scherm leeg door de meegegeven frame te verwijderen. Maakt ook nieuwe frame voor het nieuwe
+        scherm.'''
         frame.destroy()
         self.root = root
         try:
@@ -1000,11 +1064,14 @@ class gamescreen():
 
 
     def getgameinfo(self, appid):
+        '''Deze functie haalt de informatie op die uiteindelijk wordt weergegeven op het scherm.'''
         gameurl = 'https://store.steampowered.com/api/appdetails?appids={}&language={}'.format(appid, language)
         return general.getjson(general, gameurl)
 
 
     def displaygameinfo(self, appid):
+        '''Deze functie laat informatie van de game zien op de gamepagina, zoals: icoon, naam, huidige aantal spelers,
+        release datum, screenshots, enz.'''
         self.gameinfo = self.getgameinfo(appid)
         steamjson = general.binarysearch(general, mainscreen.gamesjson, 'appid', int(appid))
         gamedesc = BeautifulSoup(self.gameinfo[str(appid)]['data']['detailed_description'].replace('\t', ''), 'html.parser')
@@ -1110,6 +1177,8 @@ class gamescreen():
 
 
     def showfulldescription(self, appid):
+        '''Deze functie maakt een scherm waarop de volledige beschrijving wordt weergegeven voor zover dat kan. Dit omdat daar op
+        de gamepagina niet genoeg ruimte voor is.'''
         gobackbutton = Label(self.framedesc,
                                    text='Go Back',
                                    font=gamepagefont,
@@ -1138,17 +1207,22 @@ class gamescreen():
 
 
     def gotofulldescription(self):
+        '''Deze functie gaat naar de volledige beschrijving. Is gebonden aan een knop.'''
         self.framec.forget()
         self.framedesc.pack(fill=BOTH, expand=1)
 
 
     def goback(self):
+        '''Deze functie gaat terug naar de gamepagina als je op de knop druk als je in de volledige beschrijving aan het
+        kijken bent.'''
         self.framedesc.forget()
         self.framec.pack(fill=BOTH, expand=1)
 
 
 class librarygame():
+    '''Deze class laat een scherm zien waarop persoonlijke informatie wordt weergegeven van een game in je bezit.'''
     def __init__(self, frame, root, json):
+        '''Maakt het scherm leeg en zet een nieuwe frame neer voor het nieuwe scherm.'''
         frame.destroy()
         self.root = root
         try:
@@ -1162,6 +1236,8 @@ class librarygame():
 
 
     def displaygameinfo(self, json):
+        '''Laat persoonlijke game informatie zien, zoals je speeltijd de afgelopen twee weken, je totale speeltijd, games die
+        op deze game lijken als suggesties, enz.'''
         gotogeneralpage =  lambda x: (lambda y: gamescreen(self.framec, self.root, x))
         generalgameinfo = gamescreen.getgameinfo(gamescreen, json['appid'])
         imagevol = general.getimage(general, generalgameinfo[str(json['appid'])]['data']['header_image'], gamepagebreedte, int(gamepagebreedte * gameratio), 0)
@@ -1231,7 +1307,9 @@ class librarygame():
 
 
 class personscreen():
+    '''Deze class laat het scherm zien van een vriend.'''
     def __init__(self, frame, root, steamid):
+        '''Deze functie maakt het scherm leeg en zet een nieuw frame neer voor het nieuwe scherm.'''
         frame.destroy()
         self.root = root
         try:
@@ -1245,12 +1323,14 @@ class personscreen():
 
 
     def getpersoninfo(self, steamid):
+        '''Deze functie haalt een overzicht op van informatie van een vriend.'''
         personurl = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={}&steamids={}'.format(steamkey, steamid)
         personjson = general.getjson(general, personurl)
         return personjson
 
 
     def getrecentgames(self, steamid):
+        '''Deze functie haalt de onlangs gespeelde games op van de vriend.'''
         recenturl = 'http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key={}&steamid={}&format=json'.format(steamkey, steamid)
         recentjson = general.getjson(general, recenturl)
         if recentjson['response'] == {}:
@@ -1260,6 +1340,7 @@ class personscreen():
 
 
     def getownedgames(self, steamid):
+        '''Deze functie haalt alle games op die een vriend in bezit heeft.'''
         ownedurl = 'http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={}&steamid={}&format=json&include_appinfo=true&include_played_free_games=true'.format(steamkey, steamid)
         ownedjson = general.getjson(general, ownedurl)
         if ownedjson['response'] == {}:
@@ -1269,6 +1350,8 @@ class personscreen():
 
 
     def displayinfo(self, steamid):
+        '''Deze functie laat de algemene informatie zien van een vriend. Richt ook al de tabladen in van de speeltijd grafiek,
+        de genres grafiek en de algemene statistiek informatie.'''
         personjson = self.getpersoninfo(steamid)
         personinfo = personjson['response']['players'][0]
         imageurl = personinfo['avatarfull']
@@ -1540,6 +1623,7 @@ class personscreen():
 
 
     def gograph(self):
+        '''Deze functie gaat naar het tablad van de speeltijd grafiek.'''
         self.gotogeneral['bg'] = backgroundmain
         self.gotogengraph['bg'] = backgroundmain
         self.gotograph['bg'] = backgroundprofile
@@ -1549,6 +1633,7 @@ class personscreen():
 
 
     def gogengraph(self):
+        '''Deze functie gaat naar het tablad van de genres grafiek.'''
         self.gotogeneral['bg'] = backgroundmain
         self.gotogengraph['bg'] = backgroundprofile
         self.gotograph['bg'] = backgroundmain
@@ -1558,6 +1643,7 @@ class personscreen():
 
 
     def gogeneral(self):
+        '''Deze functie gaat naar het tablad van de algemene statistiek informatie.'''
         self.gotogeneral['bg'] = backgroundprofile
         self.gotogengraph['bg'] = backgroundmain
         self.gotograph['bg'] = backgroundmain
@@ -1567,6 +1653,7 @@ class personscreen():
 
 
     def makegraph(self, xlst, ylst):
+        '''Deze functie maakt een grafiek voor speeltijd op basis van de kozen games.'''
         try:
             self.thegraph.destroy()
         except:
@@ -1592,6 +1679,8 @@ class personscreen():
 
 
     def makenewgraph(self):
+        '''Deze functie haalt de informatie op die in de dropdownmenu's staan. Vervolgens maakt de functie nieuwe lijsten om in
+        de functie te voeren die een nieuwe grafiek maakt.'''
         timespan = self.time.get()
         listedgames = self.postedgames
         games = []
@@ -1615,6 +1704,9 @@ class personscreen():
 
 
     def changegame(self, event):
+        '''Deze functie wordt uitgevoerd als de waarde in het dropdownmenu van de games verandert. De functie checkt dan of
+        deze game al in de lijst staat van games. Als dit niet zo is zal deze functie een andere functie uitvoeren die de game
+        erbij zet.'''
         game = self.game.get()
         if game not in self.gamelst:
             if len(self.gamelst) >= 5:
@@ -1633,6 +1725,7 @@ class personscreen():
 
 
     def addgame(self):
+        '''Deze functie zet de gegeven game bij de lijst van games.'''
         for game in self.gamelst:
             if game not in self.postedgames:
                 self.postedgames.append(game)
@@ -1651,6 +1744,7 @@ class personscreen():
 
 
     def deletegame(self, game):
+        '''Deze functie verwijdert een game uit de gamelijst. Wordt uitgevoerd als je erop klikt.'''
         self.gameframe.destroy()
         self.gameframe = Frame(self.graphframe,
                                bg=backgroundmain,
@@ -1674,7 +1768,9 @@ class personscreen():
 
 
 class searchscreen():
+    '''Deze class laat een zoekscherm zien.'''
     def __init__(self, frame, root, searchterm):
+        '''Deze functie maakt het scherm leeg en zet een nieuwe frame neer.'''
         frame.destroy()
         self.root = root
         try:
@@ -1688,6 +1784,7 @@ class searchscreen():
 
 
     def getsearchresults(self, searchterm):
+        '''Deze functie haalt de string op die de gebruiker heeft ingevoerd in de zoekbalk.'''
         newlst = []
         for game in mainscreen.gamesjson:
             if searchterm.lower() in game['name'].lower():
@@ -1696,6 +1793,8 @@ class searchscreen():
 
 
     def getpossibletags(self, json):
+        '''Deze functie gaat door de resultaten van de zoekopdracht heen en kijkt op welke tags er mogelijk gefilterd kan
+        worden.'''
         taglst = []
         for game in json:
             tags = game['steamspy_tags'].split(';')
@@ -1706,6 +1805,7 @@ class searchscreen():
 
 
     def showsearchscreen(self, searchterm):
+        '''Deze functie laat de widgets op het zoekscherm zien, zoals de titel en de dropdownmenu's'''
         self.arrowup = general.getimage(general, mainscreen.arrowpicture, 50, 50, 90)
         self.arrowdown = general.getimage(general, mainscreen.arrowpicture, 50, 50, 270)
         searchbar = Entry(self.framec,
@@ -1821,6 +1921,9 @@ class searchscreen():
 
 
     def changetag(self, event):
+        '''Deze functie wordt uitgevoerd als de waarde van het dropdownmenu voor tags verandert. Deze functie haalt dan de waarde
+        op en kijkt of deze al tussen de tags staan. Als dit niet het geval is zal deze functie een andere functie runnen die de
+        tag toevoegt.'''
         tag = self.track.get()
         if tag not in self.taglst:
             if len(self.taglst) >= 5:
@@ -1839,6 +1942,7 @@ class searchscreen():
 
 
     def addtag(self):
+        '''Deze functie voegt de geselecteerde tag toe aan de tag lijst waarop gefilterd wordt.'''
         for tag in self.taglst:
             if tag not in self.postedtaglst:
                 self.postedtaglst.append(tag)
@@ -1853,6 +1957,7 @@ class searchscreen():
 
 
     def deletetag(self, tag):
+        '''Deze functie verwijdert een tag uit de lijst waarop gefilterd wordt.'''
         self.tagframe.destroy()
         self.tagframe = Frame(self.framec,
                               bg=backgroundmain,
@@ -1872,6 +1977,9 @@ class searchscreen():
 
 
     def getgameinfo(self):
+        '''Deze functie loopt door de zoekresultaten en maakt hiervoor een lijst met nieuwe dictionaries. In deze dictionary staat
+        ook de icoons van de games. Deze functie zal maar 5 games per keer toevoegen aan de lijst omdat de pagina maar 5 games
+        bevat.'''
         added = 0
         while added < 5 and self.json != []:
             try:
@@ -1894,6 +2002,8 @@ class searchscreen():
 
 
     def displaygames(self, json, startindex):
+        '''Deze functie laat 5 games uit de gamelijst zien op basis van de gegeven start index. Als de index voorbij de gamelijst
+        gaat, zal deze functie ervoor zorgen dat er 5 nieuwe games worden opgehaald.'''
         try:
             self.gameframe.destroy()
         except:
@@ -2028,6 +2138,8 @@ class searchscreen():
 
 
     def usesearchterms(self):
+        '''Deze functie haalt de ingevoerde filters en sorteertermen op om deze vervolgens toe te passen op de lijst met de
+        zoekresultaten.'''
         newjson = copy.deepcopy(self.searchresults)
         tagfilters = self.taglst
         sortterm = self.getterm.get()
@@ -2070,6 +2182,9 @@ class searchscreen():
 
 
 def goodbye():
+    '''Deze functie wordt gerund als de applicatie afsluit. De functie logt de client dan uit en zal, als dat van de voren is
+    aangegeven, de username en een loginkey opslaan in een txt bestand, zodat de user de volgende keer automatisch wordt
+    ingelogd.'''
     print('closing sequence')
     newloginkey = client.login_key
     if newloginkey is None:
