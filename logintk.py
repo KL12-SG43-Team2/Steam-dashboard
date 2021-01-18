@@ -2,7 +2,7 @@ from tkinter import *
 from tkinter import ttk
 from steam.client import SteamClient #pip install steam
 #pip install google-cloud
-#pip install google-cloud-
+#pip install google-cloud-vision
 #pip install steam[client]
 from steam.enums import EResult
 import requests #pip install requests
@@ -11,14 +11,21 @@ import urllib.parse #pip install urllib
 import io
 import atexit
 from bs4 import BeautifulSoup #pip install lxml
+#pip install beautifulsoup4
 import random
 import math
 from datetime import datetime
 import matplotlib.pyplot as plt #pip install matplotlib
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from textwrap import wrap
+import copy
 
-
+Luka = '76561198174496762'
+Luka2 = '76561198371592493'
+Robin = '76561197960434622'
+Joel = '76561198152182165'
+Eva = '76561198803753153'
+Henry = '76561198074124658'
 # steamkey = '7139EBA744B55B104024D221C07EFB38'
 steamkey = '783790D02B11E668DE41726C35D66B15'
 steamjson = 'https://raw.githubusercontent.com/tijmenjoppe/AnalyticalSkills-student/master/project/data/steam.json'
@@ -413,43 +420,45 @@ class mainscreen():
                 steamkey, friend)
             recentgames = general.getjson(general, friendrecentgameurl)
             if recentgames['response'] != {}:
-                for item in recentgames['response']['games']:
-                    if item['appid'] not in mainscreen.gamelist:
-                        gameurl = 'https://store.steampowered.com/api/appdetails?appids={}&language={}'.format(
-                            item['appid'],
-                            language)
-                        gamejson = general.getjson(general, gameurl)
-                        gamepic = gamejson[str(item['appid'])]['data']['header_image']
-                        imagevolgame = general.getimage(general, gamepic, gamebreedte, int(gamebreedte * gameratio), 0)
-                        friendplays.append({'image': imagevolgame, 'appid': item['appid']})
-                    if len(friendplays) >= 9:
-                        breakout = True
-                        break
-            if breakout:
-                break
-        suggested = []
-        tobreak = False
-        for game in self.favorgames:
-            gameinfile = general.binarysearch(general, mainscreen.gamesjson, 'appid', game['appid'])
-            tagtosearch = random.choice(gameinfile['steamspy_tags'].split(';'))
-            currentlength = len(suggested)
-            for item in popsort:
-                if tagtosearch in item['steamspy_tags']:
-                    if item['appid'] not in mainscreen.gamelist and item['appid'] not in added:
+                if 'games' in recentgames['response'].keys():
+                    for item in recentgames['response']['games']:
+                        if item['appid'] not in mainscreen.gamelist:
                             gameurl = 'https://store.steampowered.com/api/appdetails?appids={}&language={}'.format(
                                 item['appid'],
                                 language)
                             gamejson = general.getjson(general, gameurl)
                             gamepic = gamejson[str(item['appid'])]['data']['header_image']
                             imagevolgame = general.getimage(general, gamepic, gamebreedte, int(gamebreedte * gameratio), 0)
-                            suggested.append({'image': imagevolgame, 'appid': item['appid']})
-                            added.append(item['appid'])
-                if len(suggested) >= currentlength + 3:
-                    if len(suggested) >= 9:
-                        tobreak = True
-                    break
-            if tobreak:
+                            friendplays.append({'image': imagevolgame, 'appid': item['appid']})
+                            if len(friendplays) >= 9:
+                                breakout = True
+                                break
+            if breakout:
                 break
+        suggested = []
+        tobreak = False
+        for game in self.favorgames:
+            gameinfile = general.binarysearch(general, mainscreen.gamesjson, 'appid', game['appid'])
+            if gameinfile:
+                tagtosearch = random.choice(gameinfile['steamspy_tags'].split(';'))
+                currentlength = len(suggested)
+                for item in popsort:
+                    if tagtosearch in item['steamspy_tags']:
+                        if item['appid'] not in mainscreen.gamelist and item['appid'] not in added:
+                                gameurl = 'https://store.steampowered.com/api/appdetails?appids={}&language={}'.format(
+                                    item['appid'],
+                                    language)
+                                gamejson = general.getjson(general, gameurl)
+                                gamepic = gamejson[str(item['appid'])]['data']['header_image']
+                                imagevolgame = general.getimage(general, gamepic, gamebreedte, int(gamebreedte * gameratio), 0)
+                                suggested.append({'image': imagevolgame, 'appid': item['appid']})
+                                added.append(item['appid'])
+                    if len(suggested) >= currentlength + 3:
+                        if len(suggested) >= 9:
+                            tobreak = True
+                        break
+                if tobreak:
+                    break
         allgamelist.append(suggested)
         allgamelist.append(friendplays)
         allgamelist.append(popgamesnotinlib)
@@ -582,13 +591,14 @@ class mainscreen():
         gamegoright = lambda x: (lambda y: self.gameright(x, numb, gamelist))
         for j in range(3):
             ind = numb + j
-            gamepiccont = gamelist[ind]['image']
-            gamepic = Label(object,
-                            bg=backgroundmain)
-            gamepic.image = gamepiccont
-            gamepic.configure(image=gamepiccont)
-            gamepic.bind('<1>', self.gamepageshow(gamelist[ind]['appid']))
-            gamepic.grid(row=1, column=1 + j, padx=15)
+            if ind <= len(gamelist):
+                gamepiccont = gamelist[ind]['image']
+                gamepic = Label(object,
+                                bg=backgroundmain)
+                gamepic.image = gamepiccont
+                gamepic.configure(image=gamepiccont)
+                gamepic.bind('<1>', self.gamepageshow(gamelist[ind]['appid']))
+                gamepic.grid(row=1, column=1 + j, padx=15)
         left = Label(object,
                      bg=backgroundmain)
         left.image = self.arrowleft
@@ -1161,15 +1171,16 @@ class librarygame():
         generalgameinfo = gamescreen.getgameinfo(gamescreen, json['appid'])
         imagevol = general.getimage(general, generalgameinfo[str(json['appid'])]['data']['header_image'], gamepagebreedte, int(gamepagebreedte * gameratio), 0)
         steamjson = general.binarysearch(general, mainscreen.gamesjson, 'appid', json['appid'])
-        searchtag = random.choice(steamjson['steamspy_tags'].split(';'))
-        popsort = general.QuickSort(general, mainscreen.gamesjson, 'positive_ratings', ascending=False)
         suggames = []
-        for game in popsort:
-            if searchtag in game['steamspy_tags']:
-                if game['appid'] not in mainscreen.gamelist:
-                    suggames.append(game)
-            if len(suggames) >= 3:
-                break
+        if steamjson:
+            searchtag = random.choice(steamjson['steamspy_tags'].split(';'))
+            popsort = general.QuickSort(general, mainscreen.gamesjson, 'positive_ratings', ascending=False)
+            for game in popsort:
+                if searchtag in game['steamspy_tags']:
+                    if game['appid'] not in mainscreen.gamelist:
+                        suggames.append(game)
+                if len(suggames) >= 3:
+                    break
         gamepicture = Label(self.framec,
                           bg=backgroundmain)
         gamepicture.image = imagevol
@@ -1211,16 +1222,17 @@ class librarygame():
                             bg=backgroundmain)
         suggestedtxt.place(relx=0.05, rely=0.68)
         ind = 0
-        for suggame in suggames:
-            sugjson = gamescreen.getgameinfo(gamescreen, suggame['appid'])
-            sugimage = general.getimage(general, sugjson[str(suggame['appid'])]['data']['header_image'], gamebreedte, int(gamebreedte*gameratio), 0)
-            sugg = Label(self.framec,
-                         bg=backgroundmain)
-            sugg.image = sugimage
-            sugg.configure(image=sugimage)
-            sugg.place(relx=0.2+0.3*ind, rely=0.8, anchor='center')
-            sugg.bind('<1>', gotogeneralpage(suggame['appid']))
-            ind += 1
+        if suggames != []:
+            for suggame in suggames:
+                sugjson = gamescreen.getgameinfo(gamescreen, suggame['appid'])
+                sugimage = general.getimage(general, sugjson[str(suggame['appid'])]['data']['header_image'], gamebreedte, int(gamebreedte*gameratio), 0)
+                sugg = Label(self.framec,
+                             bg=backgroundmain)
+                sugg.image = sugimage
+                sugg.configure(image=sugimage)
+                sugg.place(relx=0.2+0.3*ind, rely=0.8, anchor='center')
+                sugg.bind('<1>', gotogeneralpage(suggame['appid']))
+                ind += 1
 
 
 class personscreen():
@@ -2021,7 +2033,7 @@ class searchscreen():
 
 
     def usesearchterms(self):
-        newjson = self.searchresults.copy()
+        newjson = copy.deepcopy(self.searchresults)
         tagfilters = self.taglst
         sortterm = self.getterm.get()
         aftertags = []
