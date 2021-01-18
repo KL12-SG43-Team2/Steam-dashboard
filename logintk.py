@@ -18,12 +18,7 @@ import matplotlib.pyplot as plt #pip install matplotlib
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from textwrap import wrap
 
-Luka = '76561198174496762'
-Luka2 = '76561198371592493'
-Robin = '76561197960434622'
-Joel = '76561198152182165'
-Eva = '76561198803753153'
-Henry = '76561198074124658'
+
 # steamkey = '7139EBA744B55B104024D221C07EFB38'
 steamkey = '783790D02B11E668DE41726C35D66B15'
 steamjson = 'https://raw.githubusercontent.com/tijmenjoppe/AnalyticalSkills-student/master/project/data/steam.json'
@@ -762,7 +757,7 @@ class mainscreen():
                            bg=backgroundside)
         minimize.place(relx=0.05, rely=0.02, anchor='w')
         minimize.bind('<1>', lambda x:self.root.iconify())
-        image = general.getimage(general, userinfo['avatar'], profilepicbreedte, profilepicbreedte, 0)
+        image = general.getimage(general, userinfo['avatarmedium'], profilepicbreedte, profilepicbreedte, 0)
         userpicture = Label(self.framer,
                             bg=backgroundmain)
         userpicture.image = image
@@ -1023,13 +1018,16 @@ class gamescreen():
                          fg=maintxt,
                          bg=backgroundmain)
         gamename.place(relx=0.05, rely=0.38)
-        date = steamjson['release_date']
-        if type(date) != str:
-            date = date.strftime('%d-%m-%Y')
-        # print(type(steamjson['release_date']))
         if steamjson != False:
+            if type(steamjson['release_date']) is str:
+                try:
+                    steamjson['release_date'] = datetime.strptime(steamjson['release_date'], '%Y-%m-%d').strftime('%d/%m/%Y')
+                except ValueError:
+                    pass
+            else:
+                steamjson['release_date'] = steamjson['release_date'].strftime('%d/%m/%Y')
             release = Label(self.framec,
-                              text='Release date: {}'.format(date),
+                              text='Release date: {}'.format(steamjson['release_date']),
                               font=gamepagefont,
                               fg=maintxt,
                               bg=backgroundmain)
