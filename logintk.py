@@ -20,12 +20,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from textwrap import wrap
 import copy
 
-Luka = '76561198174496762'
-Luka2 = '76561198371592493'
-Robin = '76561197960434622'
-Joel = '76561198152182165'
-Eva = '76561198803753153'
-Henry = '76561198074124658'
+
 # steamkey = '7139EBA744B55B104024D221C07EFB38'
 steamkey = '783790D02B11E668DE41726C35D66B15'
 steamjson = 'https://raw.githubusercontent.com/tijmenjoppe/AnalyticalSkills-student/master/project/data/steam.json'
