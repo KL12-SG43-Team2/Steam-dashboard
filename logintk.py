@@ -92,6 +92,11 @@ class general():
 
 
     def QuickSort(self, lst, key, ascending=True, disregardtype=False):
+        '''deze functie sorteerd de gegeven lijst met dictonaries gebaseerd op de invoer van de "key".
+         het algorithme selecteerd een pivot (het middelste item in de lijst) en deelt de elementen op in 2 lijsten
+          de eerste die kleinere getallen dan de pivot bevat(lesser) en de tweede die grotere getalen dan de pivot bevat(greater).
+          de derde lijst is voor items die even groot zijn als de pivot.
+          het algoritme blijft de lijst verdelen in kleinere stappen en sorteerd deze, waarna ze weer samen gevoegt worden'''
         if not lst:
             return []
         else:
