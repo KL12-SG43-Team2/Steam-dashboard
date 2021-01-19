@@ -10,6 +10,11 @@ De Steam Dashboard is bedoeld om een inzicht te krijgen in het game gedrag van U
 6.  Je krijgt nu het dashboard te zien met de eerste aanbeveling in de lijst.
 7.  Om het bestand af te sluiten, druk op de kruis rechts boven in.
 
+# Opmerkingen
+1. Als de 2FA per mail is ingesteld kan er niet ingelogd worden.
+2. Bij gebruik van de applicatie moet de profiel van de gebruiker op openbaar staan.
+3. Het filmpje is opgenomen op een 15,6 inch, 1080p scherm.
+
 # Medewerkers
 Aan dit dashboard hebben de volgende mensen meegewerkt:
 
