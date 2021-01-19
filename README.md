@@ -4,7 +4,7 @@ De Steam Dashboard is bedoeld om een inzicht te krijgen in het game gedrag van U
 # Tutorial
 1.  Download het .zip bestand.
 2.  Open pak het .zip bestand uit.
-3.  Klik met de rechtermuisknop op het bestand "001.py"
+3.  Klik met de rechtermuisknop op het bestand "logintk.py"
 4.  Klik op "Openen met pycharm"
 5.  Als pycharm is geopend, klik ergens in het typveld waar het leeg is met de rechtermuisknop en klik "run 001.py"
 6.  Je krijgt nu het dashboard te zien met de eerste aanbeveling in de lijst.
