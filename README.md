@@ -6,9 +6,11 @@ De Steam Dashboard is bedoeld om een inzicht te krijgen in het game gedrag van U
 2.  Open pak het .zip bestand uit.
 3.  Klik met de rechtermuisknop op het bestand "logintk.py"
 4.  Klik op "Openen met pycharm"
-5.  Als pycharm is geopend, klik ergens in het typveld waar het leeg is met de rechtermuisknop en klik "run 001.py"
-6.  Je krijgt nu het dashboard te zien met de eerste aanbeveling in de lijst.
-7.  Om het bestand af te sluiten, druk op de kruis rechts boven in.
+5.  Klik met de rechtermuisknop op het bestand "session.txt"
+6.  Open dit bestand met pycharm.
+7.  Als pycharm is geopend, klik ergens in het typveld waar het leeg is met de rechtermuisknop en klik "run logintk.py"
+8.  Je krijgt nu het dashboard te zien met de eerste aanbeveling in de lijst.
+9.  Om het bestand af te sluiten, druk op de kruis rechts boven in.
 
 # Opmerkingen
 1. Als de 2FA per mail is ingesteld kan er niet ingelogd worden.
